@@ -160,29 +160,13 @@ namespace FFCAccess
                 }
             }
 
-            if (Input.GetKeyDown(KeyCode.F1)) Speech.Say(BookReader.Active ? ReadingHelp + " " + GlobalHelp : GlobalHelp);
+            if (Input.GetKeyDown(KeyCode.F1)) Help.Open();
             else if (Input.GetKeyDown(KeyCode.F2)) BookReader.ReadAll();
             else if (Input.GetKeyDown(KeyCode.F6)) CharacterInfo.OpenAdventureSheet();
             else if (Input.GetKeyDown(KeyCode.F7)) ReadScreen();
             else if (Input.GetKeyDown(KeyCode.F8)) Speech.Say(Speech.Last);
             else if (Input.GetKeyDown(KeyCode.F10)) Diagnostics.DumpScene();
         }
-
-        private const string ReadingHelp =
-            "On the book page, the text works like a read-only text box. Arrows move by line and letter, Control with arrows by paragraph and word, " +
-            "Home and End go to the start or end of a line, Control Home and Control End to the top or bottom. Hold Shift to select, Control C copies, Control A selects all. " +
-            "Tab and Shift Tab jump between choices, and Enter or Space picks the choice you are on. D describes the illustration. B goes back to the previous section, F unlocks every choice in this section, H heals you; each asks first. In page by page layout, Page Up and Page Down turn pages.";
-
-        private static string GlobalHelp =>
-            "Keys that work anywhere: F1 help. F2 read the whole section again. I your inventory. M the map, in books that have one. " +
-            "F6 open the game's Adventure Sheet. F7 read everything on screen. F8 repeat the last message. " +
-            "F9 mod settings, also on the Accessibility tab of the game's options. F10 save a screen dump for the mod developer. " +
-            "On the book page and in fights, S your stats. In a fight, C reads both sides, and Left and Right choose an action. " +
-            "Popups read like text: arrows move through the message, Tab moves between buttons, Enter presses one. " +
-            "Stats, inventory, map and descriptions open in a text window: Enter uses an item or gives a route, Escape closes. " +
-            "In a trade or bet, Left and Right change the first amount, Shift with Left and Right the second, and T reads both. " +
-            "On the book shelf, Left and Right move along a row, by 5 with Control and by 10 with Alt, Up and Down change rows, Home and End go to the ends of a row. " +
-            "In the gallery, D describes the picture.";
 
         /// <summary>
         /// S is also the game's "down" key (W A S D move). It only means "stats" on the book page and in fights,
@@ -200,7 +184,7 @@ namespace FFCAccess
         }
 
         /// <summary>F7, the fallback for screens the mod doesn't know yet: read every visible piece of text.</summary>
-        private static void ReadScreen()
+        internal static void ReadScreen()
         {
             List<string> texts = new List<string>();
             for (int i = 0; i < SceneManager.sceneCount; i++)

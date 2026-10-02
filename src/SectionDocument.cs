@@ -105,7 +105,7 @@ namespace FFCAccess
         }
 
         /// <summary>D: the full description of the picture on this line, or else the section's first picture.</summary>
-        private void ShowPicture()
+        public void ShowPicture()
         {
             string key = ImageAt(CurrentLine);
             if (key == null)

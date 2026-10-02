@@ -283,6 +283,17 @@ namespace FFCAccess
             if (dir > 0) turner.TurnLeft(); else turner.TurnRight();
         }
 
+        /// <summary>D from the help list: describe the picture at the reading position (or the section's first).</summary>
+        public static void DescribePicture()
+        {
+            if (!SectionReader.InBook() || SectionReader.Current == null)
+            {
+                Speech.Say("No book section is open.");
+                return;
+            }
+            doc.ShowPicture();
+        }
+
         /// <summary>F2: read the whole section (or, in page layout, the current page) from the top.</summary>
         public static void ReadAll()
         {

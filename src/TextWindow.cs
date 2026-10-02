@@ -30,7 +30,7 @@ namespace FFCAccess
             box = content;
             openedFrame = Time.frameCount;
             BookReader.BlockGameInputBriefly();
-            Speech.SayPriority(title + ". " + box.LineText(0), true, 0.5f);
+            Speech.SayPriority(title + ". " + box.LineText(box.CurrentLine), true, 0.5f);
         }
 
         /// <summary>Show prose: paragraphs separated by blank lines, one line per sentence.</summary>
