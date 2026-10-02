@@ -124,6 +124,12 @@ namespace FFCAccess
                     CombatReader.ReadStatus();
                     return;
                 }
+                if (Input.GetKeyDown(KeyCode.D) && GalleryOpen())
+                {
+                    if (NavAnnouncer.GalleryPicture != null) Descriptions.ShowFull(NavAnnouncer.GalleryPicture);
+                    else Speech.Say("No picture selected.");
+                    return;
+                }
                 if (Input.GetKeyDown(KeyCode.M) && SectionReader.InBook())
                 {
                     MapReader.Open();
@@ -158,6 +164,12 @@ namespace FFCAccess
             "Keys that work anywhere: F1 help. S your stats. In a fight, C reads both sides' Skill and Stamina, and Left and Right choose an action. In a trade or bet, Left and Right change the first amount, Shift with Left and Right the second, and T reads both. " + (Diagnostics.KeyboardInventoryBound ? "The game's inventory key" : "I") + " your inventory. " +
             "Stats, inventory and descriptions open in a text window; Escape closes it. F2 read the whole section again. F6 open the Adventure Sheet. " +
             "F7 read everything on screen. F8 repeat the last message. F9 mod settings, which are also on the Accessibility tab of the game's options. F10 save a screen dump for the mod developer.";
+
+        private static bool GalleryOpen()
+        {
+            GalleryMenu gm = UnityEngine.Object.FindObjectOfType<GalleryMenu>();
+            return gm != null && gm.tweener != null && gm.tweener.visible;
+        }
 
         /// <summary>F7, the fallback for screens the mod doesn't know yet: read every visible piece of text.</summary>
         private static void ReadScreen()

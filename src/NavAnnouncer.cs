@@ -140,6 +140,8 @@ namespace FFCAccess
                     return DescribePageTurner(pt, out target);
                 case CombatButtonsMenu cbm:
                     return DescribeCombatMenu(cbm, out target);
+                case GalleryMenu gm:
+                    return DescribeGallery(gm, result as Component, out target);
                 case BookButtonCreator _:
                     target = (result as Component)?.gameObject;
                     return DescribeBook(target);
@@ -165,6 +167,35 @@ namespace FFCAccess
                 return DescribeControl(target);
             }
             return null;
+        }
+
+        /// <summary>The picture key of the gallery picture that has focus, for D. Null when none.</summary>
+        public static string GalleryPicture;
+
+        private static string DescribeGallery(GalleryMenu gm, Component result, out GameObject target)
+        {
+            target = result != null ? result.gameObject : null;
+            GalleryPicture = null;
+            if (target == null)
+            {
+                return null;
+            }
+            List<GameObject> images = Traverse.Create(gm).Field("imageobjects").GetValue<List<GameObject>>();
+            int index = images != null ? images.IndexOf(target) : -1;
+            if (index < 0)
+            {
+                return DescribeControl(target); // the close or download button
+            }
+            string position = ", " + (index + 1) + " of " + images.Count;
+            RawImage raw = target.GetComponent<RawImage>();
+            if (raw == null || raw.texture == null)
+            {
+                return "Locked picture" + position;
+            }
+            GalleryPicture = raw.texture.name;
+            Descriptions.Entry e = Descriptions.Find(GalleryPicture);
+            string text = e != null && !string.IsNullOrEmpty(e.Short) ? e.Short : "no description yet";
+            return "Picture" + position + ": " + text;
         }
 
         /// <summary>A generic button or control: its text plus disabled state.</summary>
