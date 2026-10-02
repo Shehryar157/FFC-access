@@ -173,7 +173,7 @@ namespace FFCAccess
             "On the book page and in fights, S your stats. In a fight, C reads both sides, and Left and Right choose an action. " +
             "Stats, inventory, map and descriptions open in a text window: Enter uses an item or gives a route, Escape closes. " +
             "In a trade or bet, Left and Right change the first amount, Shift with Left and Right the second, and T reads both. " +
-            "On the book shelf, Left and Right move along a row, Up and Down change rows, Home and End go to the ends of a row. " +
+            "On the book shelf, Left and Right move along a row, by 5 with Control and by 10 with Alt, Up and Down change rows, Home and End go to the ends of a row. " +
             "In the gallery, D describes the picture.";
 
         /// <summary>

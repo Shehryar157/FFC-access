@@ -8,7 +8,7 @@ using UnityEngine.UI;
 namespace FFCAccess
 {
     /// <summary>
-    /// The book shelf as a table: rows of books. Left/Right move along a row and stop at the ends,
+    /// The book shelf as a table: rows of books. Left/Right move along a row and stop at the ends (Ctrl: 5 books, Alt: 10),
     /// Up/Down change row, Home/End go to the row's ends, Ctrl+Home/End to the first and last book.
     /// We drive the game's own selection (its row and column numbers), so Enter still opens the book as usual.
     /// </summary>
@@ -63,10 +63,14 @@ namespace FFCAccess
             }
             if (e.GetButtonDown())
             {
+                // Ctrl jumps 5 books along the row, Alt jumps 10.
+                bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+                bool alt = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+                int step = alt ? 10 : ctrl ? 5 : 1;
                 switch (a)
                 {
-                    case "NavLeft": Move(0, -1); break;
-                    case "NavRight": Move(0, 1); break;
+                    case "NavLeft": Move(0, -step); break;
+                    case "NavRight": Move(0, step); break;
                     case "NavUp": Move(-1, 0); break;
                     case "NavDown": Move(1, 0); break;
                 }
@@ -121,9 +125,10 @@ namespace FFCAccess
             if (dCol != 0)
             {
                 int cols = shelves[row].transform.childCount;
-                if (col + dCol < 0) { Speech.Say("Start of row."); return; }
-                if (col + dCol >= cols) { Speech.Say("End of row."); return; }
-                col += dCol;
+                // Already at the end you're moving towards: say so. Otherwise move, stopping at the row's end.
+                if (dCol < 0 && col <= 0) { Speech.Say("Start of row."); return; }
+                if (dCol > 0 && col >= cols - 1) { Speech.Say("End of row."); return; }
+                col = Mathf.Clamp(col + dCol, 0, cols - 1);
             }
             else
             {
