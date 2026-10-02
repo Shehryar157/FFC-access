@@ -17,9 +17,16 @@ namespace FFCAccess
         /// <summary>Show lines of text. paragraphs[i] groups lines for Ctrl+Up/Down (null: each line its own).</summary>
         public static void Show(string windowTitle, IList<string> lines, IList<int> paragraphs = null)
         {
+            TextBox b = new TextBox();
+            b.SetLines(lines, paragraphs);
+            ShowBox(windowTitle, b);
+        }
+
+        /// <summary>Show any TextBox, including subclasses with their own key behaviour (like the inventory).</summary>
+        public static void ShowBox(string windowTitle, TextBox content)
+        {
             title = windowTitle;
-            box = new TextBox();
-            box.SetLines(lines, paragraphs);
+            box = content;
             BookReader.BlockGameInputBriefly();
             Speech.SayPriority(title + ". " + box.LineText(0), true, 0.5f);
         }
@@ -47,11 +54,14 @@ namespace FFCAccess
             Show(windowTitle, lines, paras);
         }
 
-        public static void Close()
+        public static void Close(bool announce = true)
         {
             box = null;
             BookReader.BlockGameInputBriefly();
-            Speech.Say(title + " closed.");
+            if (announce)
+            {
+                Speech.Say(title + " closed.");
+            }
         }
 
         /// <summary>While open, the window uses every key, so nothing else sees them.</summary>

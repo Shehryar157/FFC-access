@@ -22,6 +22,23 @@ namespace FFCAccess
             return layout != null ? layout : gc?.InvLayout;
         }
 
+        /// <summary>The inventory key this book uses for Stamina (its layout marks which stat is the Stamina one).</summary>
+        public static string StaminaKey()
+        {
+            InventoryLayout layout = Layout();
+            if (layout != null && layout.Stats != null)
+            {
+                foreach (InventoryLayout.StatConfig s in layout.Stats)
+                {
+                    if (s != null && s.Type == InventoryLayout.StatType.Stamina && !string.IsNullOrEmpty(s.inventoryKey))
+                    {
+                        return s.inventoryKey;
+                    }
+                }
+            }
+            return "stamina";
+        }
+
         /// <summary>Turn one of the game's text keys (like "stat_skill") into the words shown on screen.</summary>
         private static string Localize(string key)
         {
@@ -118,6 +135,8 @@ namespace FFCAccess
             InventoryLayout layout = Layout();
             List<string> lines = new List<string>();
             List<int> paragraphs = new List<int>();
+            List<BBInventoryItem> lineItems = new List<BBInventoryItem>();
+            List<bool> lineUsable = new List<bool>();
             int group = 0;
             HashSet<string> seen = new HashSet<string>();
             if (layout != null && layout.InventoryGroups != null)
@@ -128,14 +147,14 @@ namespace FFCAccess
                     {
                         continue;
                     }
-                    List<string> items = new List<string>();
+                    List<BBInventoryItem> items = new List<BBInventoryItem>();
                     foreach (BBInventoryItem item in c.allItemsOfTypes(g.categories))
                     {
                         if (item == null || item.quantity <= 0 || item.type == "hidden" || !seen.Add(item.gameID))
                         {
                             continue;
                         }
-                        items.Add(DescribeItem(item));
+                        items.Add(item);
                     }
                     string title = Localize(g.configTitle);
                     if (items.Count == 0 && !(g.ShowWhenEmpty && title.Length > 0))
@@ -145,10 +164,15 @@ namespace FFCAccess
                     // A heading line for the group, then one line per item, all in one paragraph.
                     lines.Add((title.Length > 0 ? title : "Items") + ", " + (items.Count == 0 ? "empty" : items.Count == 1 ? "1 item" : items.Count + " items"));
                     paragraphs.Add(group);
-                    foreach (string it in items)
+                    lineItems.Add(null);
+                    lineUsable.Add(false);
+                    foreach (BBInventoryItem it in items)
                     {
-                        lines.Add(it);
+                        // Groups marked "activatable" in the book's layout hold items you can use (Provisions, potions).
+                        lines.Add(DescribeItem(it) + (g.ActivatableItems ? ", usable" : ""));
                         paragraphs.Add(group);
+                        lineItems.Add(it);
+                        lineUsable.Add(g.ActivatableItems);
                     }
                     group++;
                 }
@@ -158,8 +182,12 @@ namespace FFCAccess
             {
                 lines.Add("Your inventory is empty.");
                 paragraphs.Add(0);
+                lineItems.Add(null);
+                lineUsable.Add(false);
             }
-            TextWindow.Show("Inventory", lines, paragraphs);
+            InventoryBox box = new InventoryBox();
+            box.Load(lines, paragraphs, lineItems, lineUsable);
+            TextWindow.ShowBox("Inventory", box);
         }
 
         private static string DescribeItem(BBInventoryItem item)
