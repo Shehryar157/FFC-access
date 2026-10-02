@@ -17,6 +17,8 @@
   <ItemGroup>
     <Compile Remove="decomp\**" />
     <None Remove="decomp\**" />
+    <Compile Remove="installer\**" />
+    <None Remove="installer\**" />
   </ItemGroup>
 
   <ItemGroup>

@@ -7,10 +7,11 @@ It contains:
   BepInEx/config/BepInEx.cfg                            with HideManagerGameObject = true (the mod needs it)
   BepInEx/plugins/FFCAccess/...                         the mod, Tolk + screen reader drivers, picture descriptions
   FFCAccess-Readme.txt                                  instructions
+  FFCAccess Installer.exe                               installs and updates the mod (also published on its own)
 It deliberately leaves out everything else in the game folder (game files, logs, caches, dumps).
 
 Usage:  python tools/package.py
-Output: dist/FFCAccess-<version>.zip
+Output: dist/FFCAccess-<version>.zip and dist/FFCAccess Installer.exe
 """
 import os
 import re
@@ -32,6 +33,9 @@ def version():
 def main():
     # 1. Build (which also copies the mod into the local game install).
     subprocess.run(["dotnet", "build", "-c", "Release"], cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
+    installer_dir = os.path.join(ROOT, "installer")
+    subprocess.run(["dotnet", "build", "-c", "Release"], cwd=installer_dir, check=True, stdout=subprocess.DEVNULL)
+    installer_exe = os.path.join(installer_dir, "bin", "Release", "FFCAccess Installer.exe")
 
     ver = version()
     stage = os.path.join(ROOT, "dist", "stage")
@@ -55,9 +59,13 @@ def main():
     for f in ("FFCAccess.dll", "Tolk.dll", "nvdaControllerClient64.dll", "SAAPI64.dll"):
         shutil.copy2(os.path.join(PLUGIN, f), dest)
     shutil.copytree(os.path.join(ROOT, "descriptions"), os.path.join(dest, "descriptions"))
+    # The installer reads this to know which version is installed.
+    open(os.path.join(dest, "version.txt"), "w").write(ver)
 
     # 5. The readme, named so it's easy to spot in the game folder.
     shutil.copy2(os.path.join(ROOT, "docs", "README.txt"), os.path.join(stage, "FFCAccess-Readme.txt"))
+    shutil.copy2(installer_exe, stage)
+    shutil.copy2(installer_exe, os.path.join(ROOT, "dist"))
 
     # 6. Zip it, with paths relative to the game folder.
     out = os.path.join(ROOT, "dist", "FFCAccess-%s.zip" % ver)
