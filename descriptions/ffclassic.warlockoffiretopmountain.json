@@ -1,0 +1,145 @@
+{
+  "book": "The Warlock of Firetop Mountain",
+  "images": {
+    "section_01": {
+      "short": "A twisted tree in a rocky valley, with a dark cave mouth and skulls on stakes beyond it.",
+      "long": "A black and white ink drawing of a rocky mountainside.\n\nIn the foreground a gnarled, twisting tree with only a few small leaves leans across the picture, its roots arching up out of stony ground. Behind it the ground flattens out towards the foot of steep, jagged cliffs.\n\nAt the base of the cliff is the dark, rounded mouth of a cave. Near the entrance stand four tall wooden stakes, each topped with a skull."
+    },
+    "section_11": {
+      "short": "A collapsed tunnel strewn with miners' picks, shovels and broken beams.",
+      "long": "A rock tunnel blocked by a cave-in.\n\nRubble and boulders have tumbled down from the right, burying broken wooden beams. Mining tools are scattered everywhere: several pickaxes, a spade standing upright in the rubble, a shovel lying on a heap of loose earth, and a flat trowel on the ground. A small caged lamp hangs on the left-hand wall."
+    },
+    "section_36": {
+      "short": "A wild, ragged madman leaps at you in a flooded stone cell, waving a bone.",
+      "long": "A small cell with walls of large stone blocks and a trapdoor-like opening in the ceiling.\n\nA gaunt man with long tangled hair and a straggly beard leaps through the air towards you, mouth open in a scream, eyes wide. He wears filthy rags and brandishes a long bone like a club.\n\nThe floor is ankle-deep in murky water and slime, with a skull and scattered bones lying in it. A rusty chain hangs from the left wall."
+    },
+    "section_58": {
+      "short": "A tree-stump seat in a cave alcove, under a sign reading 'Rest Ye Here Weary Traveller'.",
+      "long": "A rocky cave alcove lit by a burning torch in a wall bracket on the left.\n\nIn the middle stands a large, wide tree stump, cut flat like a seat or table. Above it a wooden sign is fixed to the rock. In flowing letters it reads: 'Rest Ye Here Weary Traveller'."
+    },
+    "section_71": {
+      "short": "A hulking guard in a horned helmet dozes in a rocky alcove, spear propped beside him.",
+      "long": "A large, heavy-set creature sits slumped asleep in a hollow in the cave wall, arms folded over its chest, eyes closed.\n\nIt wears a helmet with two curved horns, studded leather armour and a belt hung with pouches and a sword. Its huge bare feet stick out in front. A long spear leans against the rock beside it, and a torch burns on the wall above."
+    },
+    "section_84": {
+      "short": "A bearded sorcerer looks up from his desk in a room lined with books.",
+      "long": "A study. Behind a big wooden desk with clawed, animal-like feet sits a bearded man in a skullcap, leaning forward with his hands on the desk. A sheet of paper lies in front of him.\n\nHis high-backed chair is carved with a skull and bat wings. The wall behind is covered from floor to ceiling with shelves of books. On the right, a glass flask on a stand gives off a wisp of smoke, and a candle chandelier hangs from the ceiling."
+    },
+    "section_97": {
+      "short": "An old man in a rocking chair, in a cluttered room piled with plates and books.",
+      "long": "A cramped room crammed with clutter. Shelves and cupboards on every wall are stacked with plates, jugs, teapots and pots, and piles of old books lie on the floor. Cobwebs hang in the corners and a candle holder dangles from the cracked ceiling.\n\nIn the middle an old man wearing small spectacles sits in a wooden rocking chair, looking towards you calmly. A table beside him holds a plate and a cup."
+    },
+    "section_106": {
+      "short": "A great dragon in a high cavern, smoke curling from its grinning jaws.",
+      "long": "A huge dragon fills a tall cavern, standing on all four clawed feet and facing you.\n\nIts head is crowned with spikes and horns, and its wide mouth is full of sharp teeth, curled into something like a grin. Smoke curls up from its jaws. Large leathery wings rise from its back, and its whole body is covered in scales. Light comes from an opening high in the cavern roof."
+    },
+    "section_122": {
+      "short": "A row of gaunt, ragged undead figures clutching scythes and clubs in a wooden storeroom.",
+      "long": "A room with plank walls and a beamed ceiling, used as a storeroom.\n\nFive gaunt figures with sunken, skull-like faces stand in a row, dressed in shredded rags. They hold farm tools and weapons: scythes, sickles and clubs. The figure on the far right wears scale armour.\n\nAround them are shields leaning on the walls, a spear rack, a wooden cartwheel, and barrels in the corner. A long scythe hangs from the ceiling beams."
+    },
+    "section_134": {
+      "short": "Two helmets on a wooden table, one plain and one ornate, in a torch-lit stone room.",
+      "long": "A small room of stone blocks, lit by two flaming torches in brackets on the side walls.\n\nIn the middle stands a sturdy wooden table. On it are two helmets: on the left a plain, rounded metal helmet with a nose guard and cheek pieces; on the right a more ornate helmet with a decorated band and a small spike on top."
+    },
+    "section_143": {
+      "short": "A giant worm with a ring of teeth bursts out of an underground river.",
+      "long": "An underground river in a dark, arched cavern, with a pale sandy bank in the foreground.\n\nA huge, segmented worm erupts from the water in a great splash, its body arching overhead. Its round mouth gapes open, lined with a ring of sharp teeth."
+    },
+    "section_155": {
+      "short": "An armoury full of helmets, swords, spears and shields; a crescent-moon shield hangs on the far wall.",
+      "long": "A long room used as an armoury, brightly lit by a lamp hanging on the far wall.\n\nOn the left, shelves hold rows of helmets and a chain-mail shirt hangs above them. A rack of swords stands in the centre, and spears, axes and pole-arms lean against the walls. Many shields are propped up around the room.\n\nOn the far wall, directly under the lamp, hangs a large round shield decorated with a crescent moon."
+    },
+    "section_168": {
+      "short": "A cloaked brute in scale armour raises a whip over a cowering goblin.",
+      "long": "A lanky, pointy-eared creature with a hooked nose and wild eyes, wearing scale armour and a long flowing cloak, raises a whip high above its head, ready to strike.\n\nCrouched at its feet beside a chest, a smaller creature cowers, shielding its head with its arms."
+    },
+    "section_179": {
+      "short": "A huge minotaur, fists raised, stands before a wooden door amid smashed pottery.",
+      "long": "A massively muscled creature with the head of a bull, with long curved horns and a shaggy mane, stands with its legs planted wide and both fists raised above its head, bellowing.\n\nIt wears only a loincloth fastened with a buckle shaped like a bull's skull. Behind it is a heavy wooden door. The floor around its hooved feet is littered with broken pottery, and one large decorated urn still stands intact to the right."
+    },
+    "section_189": {
+      "short": "A room with a swirling patterned floor, a door, and three framed portraits of stern men.",
+      "long": "An empty, plain room seen from the doorway. The floor is covered in a dark, swirling, marbled pattern.\n\nIn the far wall is a closed wooden door. Three portraits in ornate frames hang on the walls: on the left a thin, long-faced man; in the middle an old man with a long beard and a cap; on the right a bearded man wearing a hood."
+    },
+    "section_193": {
+      "short": "A crouching, gargoyle-like statue with hooves and a forked tongue stands on a plinth.",
+      "long": "A room with a patterned border running along the top of the walls and a mosaic floor.\n\nOn a square stone plinth crouches a statue of a monstrous creature, as if about to spring. It has a muscular, scaly body, goat-like hooved legs, clawed hands and a ridged crest on its head. Its mouth hangs open with a forked tongue poking out."
+    },
+    "section_205": {
+      "short": "A cracked crypt with pillars and several coffins, a carved tomb at the centre.",
+      "long": "A crypt with a cracked stone ceiling held up by pillars. The walls are carved with figures and patterns, and shelves on the left hold small carved statues.\n\nSeveral plain coffins lie on the floor, some partly covered with cloth. In the centre stands a larger stone tomb, richly carved and draped with a decorated cloth."
+    },
+    "section_218": {
+      "short": "A bell on a post by an underground river, with a sign: 'Ferry Service, 2 Gold Pieces, Please Ring'.",
+      "long": "The bank of a wide, dark underground river, with stalactites hanging from the cavern roof.\n\nOn the left a wooden post holds a bell. Hanging beneath the bell is a round sign reading: 'Ferry Service, 2 Gold Pieces, Please Ring'.\n\nTo the right a rickety wooden jetty on stilts stretches out into the black water. Loose planks lie on the near bank."
+    },
+    "section_227": {
+      "short": "Four bearded dwarves smoke pipes and gamble with cards and dice around a table.",
+      "long": "Four small, bearded old men in caps and hoods sit around a wooden table, gambling. They hold playing cards, and one throws dice into the air. Coins and mugs are spread over the table.\n\nThey all smoke long pipes, and clouds of smoke hang over the table. A jug stands on the floor and a few cards have fallen under the table."
+    },
+    "section_240": {
+      "short": "Your hands open a small box, and a snake rears out of it, fangs bared.",
+      "long": "Seen from your own point of view: your two hands hold open a small box with a scaly, patterned surface and a padded lining.\n\nCoiled inside is a snake, which rears up out of the box towards you with its mouth open and fangs showing."
+    },
+    "section_251": {
+      "short": "Giant bats swoop at you over a cave stream.",
+      "long": "Three huge bats fly straight at you out of the darkness of a cave, with wings spread wide.\n\nThey have large pointed ears, snub noses and open mouths full of sharp fangs. Beneath them a stream winds across the cave floor, and a skull lies on the ground."
+    },
+    "section_266": {
+      "short": "An open case holding a bow and one arrow, its lid inscribed 'The Giver of Sleep to those who never can'.",
+      "long": "A long wooden case sits open on a table. Inside, on a smooth lining, lies a curved bow and a single arrow.\n\nThe inside of the lid carries a carved inscription: 'The Giver of Sleep to those who never can....'\n\nBehind it, a shelf holds plates and mugs."
+    },
+    "section_275": {
+      "short": "A rotting, dripping corpse crawls across the floor, reaching for you.",
+      "long": "Out of a dark background, a decaying body drags itself across the floor towards you.\n\nIts flesh is rotting and hangs from it in dripping strands, and its face is skull-like, with one wide, staring eye and bared teeth. One clawed hand reaches out towards you."
+    },
+    "section_287": {
+      "short": "Three giant rats gnaw among heaps of bones and skulls.",
+      "long": "A bare room with a small wooden door in the far wall.\n\nThe floor is covered in bones and skulls. Three enormous rats crouch among them, gnawing; the one in the middle is chewing on a bone, and they look up at you with beady eyes."
+    },
+    "section_296": {
+      "short": "A handwritten page of instructions, ending with a magic spell.",
+      "long": "A page of old handwriting in a decorative script.\n\nThe writer says that whoever holds this book holds their life's work: the power of destruction. They warn you not to waste it. If the spell is used for anything other than its intended purpose, you will be consumed by evil and die by the fire from your own hands.\n\nThe page says that only when the Dragon breathes its fire at you should you raise your arms and say the words of the spell. The words are written on four separate lines: 'Ekil Erif. Ekam Erif. Erif Erif. Di Maggio.'"
+    },
+    "section_303": {
+      "short": "A heavy iron portcullis bars the tunnel; two levers stick out of the wall beside it.",
+      "long": "A rock tunnel blocked by a heavy iron portcullis: a grid of riveted bars with spiked points along the bottom.\n\nOn the right-hand wall, beside the portcullis, two levers stick out of the rock."
+    },
+    "section_311": {
+      "short": "An empty room whose floor is a jumble of star- and hand-shaped tiles, with a double door ahead.",
+      "long": "A bare, empty room with plain walls.\n\nThe floor is covered with a jumble of tiles in different shapes, including stars and hands, in different patterns and shades.\n\nIn the far wall is a double door with a small triangular pediment above it."
+    },
+    "section_326": {
+      "short": "A glowing key hangs in a cleft of the cave rock.",
+      "long": "A rocky cave chamber with a low, layered ceiling.\n\nIn the centre, a key hangs in a crack in the rock wall, surrounded by a glowing halo of light."
+    },
+    "section_336": {
+      "short": "A snarling spotted hound stands over a body sprawled on a broken bed in a wrecked room.",
+      "long": "A wrecked room full of smashed wooden furniture and planks.\n\nOn the left a body lies sprawled across a broken bed. Over it stands a large dog with a spotted coat, snarling, its teeth bared.\n\nA map is pinned to the wall in the top left corner, and a keyhole can be seen on the wall to the right."
+    },
+    "section_348": {
+      "short": "A hulking, pointy-eared brute in a belt of skulls lunges out of a cave mouth.",
+      "long": "A huge, muscular creature with pointed ears and a fanged mouth bursts out of a dark cave entrance, stooping forward.\n\nIt wears a belt hung with small skulls and carries a curved blade. Skulls and bones are scattered on the ground on both sides of the entrance."
+    },
+    "section_358": {
+      "short": "A tall robed sorcerer with a topknot, lightning crackling from his hands.",
+      "long": "A tall, stern man stands facing you against a diamond-shaped background. His head is shaved except for a topknot, and he has a thin moustache and pointed beard.\n\nHe wears long, layered robes richly decorated with patterns, and a sash with a large jewel at the waist. Crackling bolts of lightning run from his hands out to the edges of the picture."
+    },
+    "section_370": {
+      "short": "Two warty goblins slump at a table, drinking from jugs.",
+      "long": "Two goblin-like creatures with big ears, warty faces and drooping eyes sit at a rough wooden table.\n\nThe one on the left leans back with one arm on the table. The one on the right, wearing a studded cap and shoulder armour, pours drink from a bottle. Jugs and bottles stand on the table."
+    },
+    "section_383": {
+      "short": "Through wooden bars: a shattered boat and broken planks littered with skeletons.",
+      "long": "You look through a window of thick wooden bars set in a wooden wall.\n\nOn the other side is a wrecked boat among broken planks and beams. Several skeletons lie and sit among the wreckage; one sits in the boat, and another is slumped over the timbers."
+    },
+    "section_394": {
+      "short": "A giant hairy spider rears up among the stalagmites, fangs bared.",
+      "long": "A cave full of stalactites and stalagmites.\n\nAn enormous spider covered in bristly hair rears up on its back legs, its front legs raised high. Its many eyes stare at you, and two large curved fangs jut from its mouth."
+    },
+    "section_400": {
+      "short": "An open treasure chest overflowing with gold and jewels, shining brightly.",
+      "long": "A large treasure chest with its lid thrown open, its sides decorated with ornate metalwork.\n\nIt is heaped to the brim with gold coins, jewellery, chains and precious objects. Jagged lines of light burst out all around it, as if it is shining brightly."
+    }
+  }
+}
