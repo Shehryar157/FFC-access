@@ -8,13 +8,15 @@ It speaks through NVDA or JAWS, and uses Windows voices (SAPI) if no screen read
 Installing
 ----------
 
-1. Unpack everything in this zip into the game folder. Say yes if Windows asks to replace files.
+1. Run FFCAccess Installer. It finds the game through Steam and asks before changing anything.
 2. Start the game from Steam as usual. After a few seconds you should hear
    "Fighting Fantasy Classics accessibility loaded. Press F1 for help."
 
-The zip includes BepInEx 5, the mod loader that runs this mod. If you already use BepInEx with this game,
-you only need the BepInEx\plugins\FFCAccess folder; make sure HideManagerGameObject is set to true in
-BepInEx\config\BepInEx.cfg.
+To update, run "FFCAccess Installer" again (a copy is kept in the game folder). It checks for a newer version
+online, installs it, and removes files the older version installed that are no longer needed. Your own files
+are kept: your settings, screen dumps, and a .bak backup of any picture description you edited.
+
+The installer includes BepInEx 5, the mod loader that runs this mod.
 
 To uninstall, delete winhttp.dll from the game folder (that switches all mods off), or delete the
 BepInEx\plugins\FFCAccess folder to remove only this mod.
@@ -96,12 +98,10 @@ keep the quotes and commas in place.
 If the mod doesn't start
 ------------------------
 
-- Check the files are in the right place: winhttp.dll must be in the same folder as
-  "Fighting Fantasy Classics.exe". If unpacking created an extra folder (such as FFCAccess-0.7.0), move its contents
-  up into the game folder.
+- If the installer can't find the game, paste the game folder when it asks.
 - Finding the game folder: in your Steam library, open the game's context menu, choose Manage, then Browse local files.
 - Still silent? Look for BepInEx\LogOutput.log in the game folder. If it's missing, BepInEx didn't run, which usually
-  means winhttp.dll is in the wrong place.
+  means winhttp.dll is missing from the game folder. Running the installer again puts it back.
 
 
 Reporting problems

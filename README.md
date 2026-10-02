@@ -6,24 +6,26 @@ It speaks through **NVDA** or **JAWS**, and falls back to Windows voices (**SAPI
 With it you can browse the book shelf and menus, read every section like a document, take choices, roll dice,
 fight, manage your inventory, explore book maps by compass direction, and hear descriptions of the illustrations.
 
-## Installing
+## Installing and updating
 
-1. Download the latest zip from the [Releases](../../releases) page.
-2. Unpack it into the game folder.
+1. Download **FFCAccess.Installer.exe** from the [latest release](../../releases/latest).
+2. Run it. It finds the game through Steam, asks before changing anything, and installs the mod.
 3. Start the game. You should hear "Fighting Fantasy Classics accessibility loaded. Press F1 for help."
 
-The zip contains BepInEx 5 (the mod loader), the mod, and `FFCAccess-Readme.txt` with every key and setting.
+To update, run the installer again: it checks for a newer version online and installs it. A copy of the installer
+is kept in the game folder, so you can run it from there. It keeps your own files: your BepInEx settings, your
+F10 dumps, and a backup of any picture descriptions you've edited. It also removes files that older versions
+installed and the new one no longer needs.
+
+The installer includes BepInEx 5 (the mod loader), the mod, and `FFCAccess-Readme.txt` with every key and setting.
 It contains no game files. To uninstall, delete `winhttp.dll` from the game folder.
 
 ### If the mod doesn't start
 
-- **Check the files are in the right place.** `winhttp.dll` must be in the same folder as
-  `Fighting Fantasy Classics.exe`. If unpacking created an extra folder (such as `FFCAccess-0.7.0`), move its contents
-  up into the game folder.
-- **Finding the game folder:** in your Steam library, open the game's context menu, choose Manage, then
-  Browse local files.
-- **Still silent?** Check `BepInEx\LogOutput.log` in the game folder. If it's missing, BepInEx didn't run, which
-  usually means `winhttp.dll` is in the wrong place.
+- **If the installer can't find the game,** paste the game folder when it asks. To find it in your Steam library,
+  open the game's context menu, choose Manage, then Browse local files.
+- **Check the log:** if `BepInEx\LogOutput.log` doesn't exist in the game folder after starting the game, BepInEx
+  didn't run. Run the installer again, or check that `winhttp.dll` is next to `Fighting Fantasy Classics.exe`.
 
 ## What it does
 
@@ -55,7 +57,7 @@ and reporting back. Neither the game's source code nor any official modding supp
   It's called from C# with P/Invoke.
 - **.NET SDK** builds the mod (a C# library targeting .NET Framework 4.7.2, to match the game's Mono runtime).
 - **Python with UnityPy** extracts the books' illustrations from the game's asset bundles, so they could be described.
-  `tools/package.py` builds the release zip.
+  `tools/package.py` builds the installer, with the mod packed inside it.
 
 **How it hooks into the game**
 
@@ -84,8 +86,9 @@ and reporting back. Neither the game's source code nor any official modding supp
 - `src/`: the mod (C#). `Plugin.cs` is the entry point. `TextBox.cs` is the reusable accessible text box that the
   reader, popups and windows build on.
 - `descriptions/`: picture descriptions as JSON, one file per book. Corrections are welcome.
-- `docs/README.txt`: the player-facing readme that ships in the zip.
+- `docs/README.txt`: the player-facing readme that ships inside the installer.
 - `native/`: Tolk and the screen reader drivers.
+- `installer/`: the installer and updater (a C# console program; the mod's files are packed inside it at build time).
 - `tools/`: image extraction and release packaging (Python).
 
 ## Building
@@ -93,7 +96,7 @@ and reporting back. Neither the game's source code nor any official modding supp
 You need the .NET SDK and the game installed (the project references the game's own DLLs).
 Set `GameDir` in `FFCAccess.csproj` if your game is not in `D:\Steam\steamapps\common\Fighting Fantasy Classics`,
 then run `dotnet build -c Release`. The build copies the mod into the game's `BepInEx\plugins\FFCAccess` folder.
-`python tools/package.py` makes the release zip.
+`python tools/package.py` builds the installer, with the mod packed inside it, into `dist/`.
 
 ## Credits
 
