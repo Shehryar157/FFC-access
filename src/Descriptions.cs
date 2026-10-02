@@ -32,16 +32,21 @@ namespace FFCAccess
 
         public static Entry Find(string imageKey)
         {
-            string book = CurrentBookId;
-            if (book == null || string.IsNullOrEmpty(imageKey))
+            return FindIn(CurrentBookId, imageKey);
+        }
+
+        /// <summary>Look a picture up in a specific description file, e.g. "portraits" for portraits.json.</summary>
+        public static Entry FindIn(string fileId, string imageKey)
+        {
+            if (fileId == null || string.IsNullOrEmpty(imageKey))
             {
                 return null;
             }
             Dictionary<string, Entry> table;
-            if (!books.TryGetValue(book, out table))
+            if (!books.TryGetValue(fileId, out table))
             {
-                table = Load(book);
-                books[book] = table;
+                table = Load(fileId);
+                books[fileId] = table;
             }
             Entry e;
             table.TryGetValue(Normalize(imageKey), out e);

@@ -145,6 +145,15 @@ namespace FFCAccess
                     return DescribeBook(target);
                 case OptionsMenu om:
                     return DescribeOptions(om, result, out target);
+                case PopupPanel pp when result == null:
+                    // Focus is on the popup's text field rather than a button.
+                    if (pp.inputField != null && pp.inputField.gameObject.activeInHierarchy)
+                    {
+                        target = pp.inputField.gameObject;
+                        string value = pp.inputField.text;
+                        return TextEntry.LabelFor(pp.inputField) + ", edit, " + (string.IsNullOrEmpty(value) ? "blank" : value);
+                    }
+                    return null;
             }
             if (result is OptionsNav.OptionsItem item)
             {

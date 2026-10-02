@@ -11,6 +11,7 @@ namespace FFCAccess
     {
         private static TextBox box;
         private static string title;
+        private static int openedFrame = -1;
 
         public static bool Open => box != null;
 
@@ -27,6 +28,7 @@ namespace FFCAccess
         {
             title = windowTitle;
             box = content;
+            openedFrame = Time.frameCount;
             BookReader.BlockGameInputBriefly();
             Speech.SayPriority(title + ". " + box.LineText(0), true, 0.5f);
         }
@@ -70,6 +72,11 @@ namespace FFCAccess
             if (box == null)
             {
                 return false;
+            }
+            // Ignore the keypress that opened the window (often the same Enter), so it isn't used twice.
+            if (Time.frameCount <= openedFrame + 1)
+            {
+                return true;
             }
             if (Input.GetKeyDown(KeyCode.Escape))
             {

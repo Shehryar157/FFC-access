@@ -1,0 +1,21 @@
+{
+  "book": "Character portraits",
+  "images": {
+    "AWF_portrait_female_01": { "short": "A woman with thick, wavy shoulder-length hair and blank white eyes, gazing upwards." },
+    "AWF_portrait_female_02": { "short": "A woman in a domino eye-mask, her hair swept back under a headband." },
+    "AWF_portrait_female_03": { "short": "A woman wearing a tall crown-like helmet of jagged spikes, with flowing hair." },
+    "AWF_portrait_female_04": { "short": "A woman with her hair in a bun and glowing lines running across her face like circuitry." },
+    "AWF_portrait_female_05": { "short": "A young woman with short, messy hair and an intense, blank-eyed stare." },
+    "AWF_portrait_female_06": { "short": "A woman with slicked-back hair, a high caped collar and a scar running down one eye." },
+    "AWF_portrait_female_07": { "short": "A woman in a narrow eye-mask with tousled hair and a high collar." },
+    "AWF_portrait_female_08": { "short": "A woman with windswept hair wearing tinted goggles, glancing to one side." },
+    "AWF_portrait_male_01": { "short": "A stern young man with swept-back hair and a dark cape, arms folded." },
+    "AWF_portrait_male_02": { "short": "A man in a full helmet with a wide visor covering his eyes." },
+    "AWF_portrait_male_03": { "short": "A man with a tall swept quiff, narrow goggles and a high cape collar." },
+    "AWF_portrait_male_04": { "short": "A muscular man with short curly hair and a band covering his eyes." },
+    "AWF_portrait_male_05": { "short": "A figure in a smooth, featureless armoured mask and helmet." },
+    "AWF_portrait_male_06": { "short": "A bald man with a long braided beard and three round marks on his forehead." },
+    "AWF_portrait_male_07": { "short": "A grinning man with long flowing hair and a metal headpiece." },
+    "AWF_portrait_male_08": { "short": "A long-haired, moustached man wearing a metal headband, looking grim." }
+  }
+}

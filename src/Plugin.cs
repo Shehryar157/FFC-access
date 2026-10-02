@@ -34,6 +34,8 @@ namespace FFCAccess
             TryPatch("popup reader", () => PopupReader.Patch(harmony));
             TryPatch("options tab", () => OptionsTab.Patch(harmony));
             TryPatch("combat and dice", () => CombatReader.Patch(harmony));
+            TryPatch("text entry", () => TextEntry.Patch(harmony));
+            TryPatch("portraits", () => Portraits.Patch(harmony));
 
             SceneManager.sceneLoaded += (scene, mode) => Log.LogInfo("Scene loaded: " + scene.name);
             Speech.Say("Fighting Fantasy Classics accessibility loaded. Press F1 for help.");
