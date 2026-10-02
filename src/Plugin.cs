@@ -106,6 +106,11 @@ namespace FFCAccess
                 CharacterInfo.ReadInventory();
                 return;
             }
+            // Trade and bet popups: amounts on Left/Right.
+            if (Trading.HandleKeys(shift))
+            {
+                return;
+            }
             // Reading keys come next; they only do anything on the book page.
             if (BookReader.HandleKeys(ctrl, shift))
             {
@@ -145,7 +150,7 @@ namespace FFCAccess
             "Tab and Shift Tab jump between choices, and Enter or Space picks the choice you are on. D describes the illustration. B goes back to the previous section, F unlocks every choice in this section, H heals you; each asks first. In page by page layout, Page Up and Page Down turn pages.";
 
         private static string GlobalHelp =>
-            "Keys that work anywhere: F1 help. S your stats. In a fight, C reads both sides' Skill and Stamina, and Left and Right choose an action. " + (Diagnostics.KeyboardInventoryBound ? "The game's inventory key" : "I") + " your inventory. " +
+            "Keys that work anywhere: F1 help. S your stats. In a fight, C reads both sides' Skill and Stamina, and Left and Right choose an action. In a trade or bet, Left and Right change the first amount, Shift with Left and Right the second, and T reads both. " + (Diagnostics.KeyboardInventoryBound ? "The game's inventory key" : "I") + " your inventory. " +
             "Stats, inventory and descriptions open in a text window; Escape closes it. F2 read the whole section again. F6 open the Adventure Sheet. " +
             "F7 read everything on screen. F8 repeat the last message. F9 mod settings, which are also on the Accessibility tab of the game's options. F10 save a screen dump for the mod developer.";
 
