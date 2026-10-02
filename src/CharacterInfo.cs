@@ -52,7 +52,7 @@ namespace FFCAccess
             return true;
         }
 
-        /// <summary>F4: "Skill 10 of 11, Stamina 18 of 20, Luck 9 of 9".</summary>
+        /// <summary>S: a window listing each stat, like "Stamina 18 of 20".</summary>
         public static void ReadStats()
         {
             if (!Ready())
@@ -100,10 +100,14 @@ namespace FFCAccess
                 }
             }
             LogInventory(c);
-            Speech.Say(parts.Count > 0 ? string.Join(", ", parts.ToArray()) : "No stats found.");
+            if (parts.Count == 0)
+            {
+                parts.Add("No stats found.");
+            }
+            TextWindow.Show("Stats", parts);
         }
 
-        /// <summary>F5: items, grouped the way the Adventure Sheet groups them.</summary>
+        /// <summary>I (or the game's own Inventory key): a window of items, grouped like the Adventure Sheet. Ctrl+Down jumps between groups.</summary>
         public static void ReadInventory()
         {
             if (!Ready())
@@ -112,7 +116,9 @@ namespace FFCAccess
             }
             Character c = Player;
             InventoryLayout layout = Layout();
-            List<string> groups = new List<string>();
+            List<string> lines = new List<string>();
+            List<int> paragraphs = new List<int>();
+            int group = 0;
             HashSet<string> seen = new HashSet<string>();
             if (layout != null && layout.InventoryGroups != null)
             {
@@ -132,18 +138,28 @@ namespace FFCAccess
                         items.Add(DescribeItem(item));
                     }
                     string title = Localize(g.configTitle);
-                    if (items.Count > 0)
+                    if (items.Count == 0 && !(g.ShowWhenEmpty && title.Length > 0))
                     {
-                        groups.Add((title.Length > 0 ? title + ": " : "") + string.Join(", ", items.ToArray()));
+                        continue;
                     }
-                    else if (g.ShowWhenEmpty && title.Length > 0)
+                    // A heading line for the group, then one line per item, all in one paragraph.
+                    lines.Add((title.Length > 0 ? title : "Items") + ", " + (items.Count == 0 ? "empty" : items.Count == 1 ? "1 item" : items.Count + " items"));
+                    paragraphs.Add(group);
+                    foreach (string it in items)
                     {
-                        groups.Add(title + ": empty");
+                        lines.Add(it);
+                        paragraphs.Add(group);
                     }
+                    group++;
                 }
             }
             LogInventory(c);
-            Speech.Say(groups.Count > 0 ? string.Join(". ", groups.ToArray()) : "Your inventory is empty.");
+            if (lines.Count == 0)
+            {
+                lines.Add("Your inventory is empty.");
+                paragraphs.Add(0);
+            }
+            TextWindow.Show("Inventory", lines, paragraphs);
         }
 
         private static string DescribeItem(BBInventoryItem item)

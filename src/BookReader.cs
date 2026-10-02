@@ -45,12 +45,24 @@ namespace FFCAccess
         /// </summary>
         private static bool InputPrefix(InputActionEventData eventData)
         {
-            if (SettingsMenu.Open || Time.frameCount <= blockAllUntilFrame)
+            if (SettingsMenu.Open || TextWindow.Open || Time.frameCount <= blockAllUntilFrame)
             {
+                return false;
+            }
+            if (Active && eventData.actionName == "Inventory")
+            {
+                // Borrow the game's own Inventory key: on the book page it opens our inventory window instead.
+                if (eventData.GetButtonDown())
+                {
+                    InventoryRequested = true;
+                }
                 return false;
             }
             return !(Active && StolenActions.Contains(eventData.actionName));
         }
+
+        /// <summary>Set when the game's Inventory key was pressed on the book page; the plugin opens our inventory.</summary>
+        public static bool InventoryRequested;
 
         /// <summary>Keep all keys from the game for a couple of frames (used when closing our own menu with Escape).</summary>
         public static void BlockGameInputBriefly()
@@ -80,7 +92,7 @@ namespace FFCAccess
         /// </summary>
         private static bool ComputeActive()
         {
-            if (SettingsMenu.Open || !SectionReader.InBook() || SectionReader.IsFlowStyle())
+            if (SettingsMenu.Open || TextWindow.Open || !SectionReader.InBook() || SectionReader.IsFlowStyle())
             {
                 return false;
             }
@@ -266,17 +278,6 @@ namespace FFCAccess
             }
             Reload(false);
             Speech.SayPriority(SectionReader.Heading(SectionReader.Current) + "\n" + ReadAloudText(false), true, 2.5f);
-        }
-
-        /// <summary>F3: list every choice in the section, whatever page it's on.</summary>
-        public static void ReadChoices()
-        {
-            if (!SectionReader.InBook() || SectionReader.Current == null)
-            {
-                Speech.Say("No book section is open.");
-                return;
-            }
-            Speech.Say(SectionReader.ChoicesSummary(SectionReader.Build(SectionReader.Current)));
         }
 
         // ---------- Picking a choice ----------

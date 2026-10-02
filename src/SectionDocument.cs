@@ -81,6 +81,11 @@ namespace FFCAccess
                 MoveChoice(shift ? -1 : 1);
                 return true;
             }
+            if (!ctrl && Input.GetKeyDown(KeyCode.D))
+            {
+                ShowPicture();
+                return true;
+            }
             if (!ctrl && !shift && Input.GetKeyDown(KeyCode.Space) && ChoiceAt(CurrentLine) >= 0)
             {
                 OnEnter();
@@ -98,6 +103,25 @@ namespace FFCAccess
                 return;
             }
             BookReader.ActivateChoice(Content.Choices[choice].Link);
+        }
+
+        /// <summary>D: the full description of the picture on this line, or else the section's first picture.</summary>
+        private void ShowPicture()
+        {
+            string key = ImageAt(CurrentLine);
+            if (key == null)
+            {
+                foreach (string k in imageOfLine)
+                {
+                    if (k != null) { key = k; break; }
+                }
+            }
+            if (key == null)
+            {
+                Say("No illustration here.");
+                return;
+            }
+            Descriptions.ShowFull(key);
         }
 
         private void MoveChoice(int dir)

@@ -14,6 +14,9 @@ namespace FFCAccess
     {
         private static bool loggedBindings;
 
+        /// <summary>True if the game has a keyboard key for its "Inventory" action (known once bindings are logged).</summary>
+        public static bool KeyboardInventoryBound;
+
         public static void TryLogBindings()
         {
             if (loggedBindings || !ReInput.isReady)
@@ -34,6 +37,10 @@ namespace FFCAccess
                     foreach (ActionElementMap aem in map.AllMaps)
                     {
                         InputAction action = ReInput.mapping.GetAction(aem.actionId);
+                        if (action != null && action.name == "Inventory" && map.enabled)
+                        {
+                            KeyboardInventoryBound = true;
+                        }
                         sb.Append("  ").Append(action != null ? action.name : aem.actionId.ToString())
                           .Append(" = ").Append(aem.elementIdentifierName)
                           .Append(aem.modifierKey1 != ModifierKey.None ? " +" + aem.modifierKey1 : "")

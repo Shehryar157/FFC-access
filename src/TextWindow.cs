@@ -1,0 +1,73 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace FFCAccess
+{
+    /// <summary>
+    /// A modal "window" holding a read-only TextBox: used for stats, inventory and picture descriptions.
+    /// While it's open, all keys go to it and the game receives no input. Escape closes it.
+    /// </summary>
+    internal static class TextWindow
+    {
+        private static TextBox box;
+        private static string title;
+
+        public static bool Open => box != null;
+
+        /// <summary>Show lines of text. paragraphs[i] groups lines for Ctrl+Up/Down (null: each line its own).</summary>
+        public static void Show(string windowTitle, IList<string> lines, IList<int> paragraphs = null)
+        {
+            title = windowTitle;
+            box = new TextBox();
+            box.SetLines(lines, paragraphs);
+            BookReader.BlockGameInputBriefly();
+            Speech.SayPriority(title + ". " + box.LineText(0), true, 0.5f);
+        }
+
+        /// <summary>Show prose: paragraphs separated by blank lines, one line per sentence.</summary>
+        public static void ShowText(string windowTitle, string text)
+        {
+            List<string> lines = new List<string>();
+            List<int> paras = new List<int>();
+            int p = 0;
+            foreach (string para in text.Replace("\r", "").Split(new[] { "\n\n" }, System.StringSplitOptions.RemoveEmptyEntries))
+            {
+                foreach (string sentence in SectionReader.Sentences(para.Replace('\n', ' ').Trim()))
+                {
+                    lines.Add(sentence);
+                    paras.Add(p);
+                }
+                p++;
+            }
+            if (lines.Count == 0)
+            {
+                lines.Add("blank");
+                paras.Add(0);
+            }
+            Show(windowTitle, lines, paras);
+        }
+
+        public static void Close()
+        {
+            box = null;
+            BookReader.BlockGameInputBriefly();
+            Speech.Say(title + " closed.");
+        }
+
+        /// <summary>While open, the window uses every key, so nothing else sees them.</summary>
+        public static bool HandleKeys(bool ctrl, bool shift)
+        {
+            if (box == null)
+            {
+                return false;
+            }
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                Close();
+                return true;
+            }
+            box.HandleKeys(ctrl, shift);
+            return true;
+        }
+    }
+}

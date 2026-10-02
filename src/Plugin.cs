@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 
 namespace FFCAccess
 {
-    [BepInPlugin("ffcaccess.screenreader", "FFC Access", "0.3.0")]
+    [BepInPlugin("ffcaccess.screenreader", "FFC Access", "0.4.0")]
     public class Plugin : BaseUnityPlugin
     {
         internal static Plugin Instance;
@@ -69,7 +69,13 @@ namespace FFCAccess
             bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
             bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
-            // Our settings menu takes every key while it's open.
+            // An open text window (stats, inventory, picture description) takes every key.
+            if (TextWindow.HandleKeys(ctrl, shift))
+            {
+                BookReader.InventoryRequested = false;
+                return;
+            }
+            // So does our settings menu.
             if (SettingsMenu.HandleKeys())
             {
                 return;
@@ -79,17 +85,35 @@ namespace FFCAccess
                 SettingsMenu.Toggle();
                 return;
             }
+            // The game's own Inventory key, borrowed on the book page.
+            if (BookReader.InventoryRequested)
+            {
+                BookReader.InventoryRequested = false;
+                CharacterInfo.ReadInventory();
+                return;
+            }
             // Reading keys come next; they only do anything on the book page.
             if (BookReader.HandleKeys(ctrl, shift))
             {
                 return;
             }
+            // Letter hotkeys: never while typing in a text field, and not with Ctrl (Ctrl+S etc. are left alone).
+            if (!ctrl && !TextUtil.TypingInField())
+            {
+                if (Input.GetKeyDown(KeyCode.S))
+                {
+                    CharacterInfo.ReadStats();
+                    return;
+                }
+                if (Input.GetKeyDown(KeyCode.I) && !Diagnostics.KeyboardInventoryBound)
+                {
+                    CharacterInfo.ReadInventory();
+                    return;
+                }
+            }
 
             if (Input.GetKeyDown(KeyCode.F1)) Speech.Say(BookReader.Active ? ReadingHelp + " " + GlobalHelp : GlobalHelp);
             else if (Input.GetKeyDown(KeyCode.F2)) BookReader.ReadAll();
-            else if (Input.GetKeyDown(KeyCode.F3)) BookReader.ReadChoices();
-            else if (Input.GetKeyDown(KeyCode.F4)) CharacterInfo.ReadStats();
-            else if (Input.GetKeyDown(KeyCode.F5)) CharacterInfo.ReadInventory();
             else if (Input.GetKeyDown(KeyCode.F6)) CharacterInfo.OpenAdventureSheet();
             else if (Input.GetKeyDown(KeyCode.F7)) ReadScreen();
             else if (Input.GetKeyDown(KeyCode.F8)) Speech.Say(Speech.Last);
@@ -99,11 +123,12 @@ namespace FFCAccess
         private const string ReadingHelp =
             "On the book page, the text works like a read-only text box. Arrows move by line and letter, Control with arrows by paragraph and word, " +
             "Home and End go to the start or end of a line, Control Home and Control End to the top or bottom. Hold Shift to select, Control C copies, Control A selects all. " +
-            "Tab and Shift Tab jump between choices, and Enter or Space picks the choice you are on. In page by page layout, Page Up and Page Down turn pages.";
+            "Tab and Shift Tab jump between choices, and Enter or Space picks the choice you are on. D describes the illustration. In page by page layout, Page Up and Page Down turn pages.";
 
-        private const string GlobalHelp =
-            "Keys that work anywhere: F1 help. F2 read the whole section again. F3 list all choices. F4 your stats. F5 your inventory. " +
-            "F6 open the Adventure Sheet. F7 read everything on screen. F8 repeat the last message. F9 mod settings. F10 save a screen dump for the mod developer.";
+        private static string GlobalHelp =>
+            "Keys that work anywhere: F1 help. S your stats. " + (Diagnostics.KeyboardInventoryBound ? "The game's inventory key" : "I") + " your inventory. " +
+            "Stats, inventory and descriptions open in a text window; Escape closes it. F2 read the whole section again. F6 open the Adventure Sheet. " +
+            "F7 read everything on screen. F8 repeat the last message. F9 mod settings. F10 save a screen dump for the mod developer.";
 
         /// <summary>F7, the fallback for screens the mod doesn't know yet: read every visible piece of text.</summary>
         private static void ReadScreen()

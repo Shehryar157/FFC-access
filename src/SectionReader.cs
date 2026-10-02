@@ -168,7 +168,7 @@ namespace FFCAccess
             switch (b.Kind)
             {
                 case BlockKind.PageBreak: return "Page break.";
-                case BlockKind.Image: return "Illustration.";
+                case BlockKind.Image: return Descriptions.Line(b.ImageKey);
                 default: return b.Text;
             }
         }

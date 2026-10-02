@@ -110,6 +110,15 @@ namespace FFCAccess
             return Humanize(go.name);
         }
 
+        /// <summary>True while the player is typing in one of the game's text fields (so letter hotkeys must stay quiet).</summary>
+        public static bool TypingInField()
+        {
+            UnityEngine.EventSystems.EventSystem es = UnityEngine.EventSystems.EventSystem.current;
+            GameObject go = es != null ? es.currentSelectedGameObject : null;
+            TMP_InputField field = go != null ? go.GetComponent<TMP_InputField>() : null;
+            return field != null && field.isFocused;
+        }
+
         public static string Join(IEnumerable<string> parts, string sep = ". ")
         {
             StringBuilder sb = new StringBuilder();

@@ -28,6 +28,7 @@
     <Reference Include="0Harmony"><HintPath>$(GameDir)\BepInEx\core\0Harmony.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Assembly-CSharp"><HintPath>$(Managed)\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Rewired_Core"><HintPath>$(Managed)\Rewired_Core.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Newtonsoft.Json"><HintPath>$(Managed)\Newtonsoft.Json.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="DOTween"><HintPath>$(Managed)\DOTween.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityEngine"><HintPath>$(Managed)\UnityEngine.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityEngine.CoreModule"><HintPath>$(Managed)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
@@ -42,6 +43,10 @@
     <MakeDir Directories="$(PluginDir)" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginDir)" />
     <Copy SourceFiles="native\Tolk.dll;native\nvdaControllerClient64.dll;native\SAAPI64.dll" DestinationFolder="$(PluginDir)" SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <DescriptionFiles Include="descriptions\*.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DescriptionFiles)" DestinationFolder="$(PluginDir)\descriptions" />
   </Target>
 
 </Project>
