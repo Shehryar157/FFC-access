@@ -21,7 +21,6 @@ namespace FFCAccess
         public static ConfigEntry<bool> AutoRead;
         public static ConfigEntry<bool> AnnouncePageBreaks;
         public static ConfigEntry<bool> PreferSapi;
-        public static ConfigEntry<bool> CustomSounds;
 
         public static void Bind(ConfigFile config)
         {
@@ -31,8 +30,6 @@ namespace FFCAccess
                 "Read each new section (or page) aloud as soon as it opens.");
             AnnouncePageBreaks = config.Bind("Reading", "AnnouncePageBreaks", true,
                 "In whole-section layout, mark the page breaks the book's authors placed on purpose.");
-            CustomSounds = config.Bind("Sound", "CustomSounds", true,
-                "Play sounds from the \"FFCAccess Sounds\" folder in the game folder for fights and dice, where there are any.");
             PreferSapi = config.Bind("Speech", "PreferSAPI", false,
                 "Speak with Windows SAPI voices even when a screen reader (NVDA, JAWS) is running.");
         }
@@ -76,7 +73,6 @@ namespace FFCAccess
                 },
                 Toggle("Read new sections automatically", ModSettings.AutoRead),
                 Toggle("Announce page breaks", ModSettings.AnnouncePageBreaks, () => BookReader.Reload(true)),
-                Toggle("Custom combat and dice sounds", ModSettings.CustomSounds),
                 Toggle("Use Windows voices even with a screen reader", ModSettings.PreferSapi, () => Speech.SetPreferSapi(ModSettings.PreferSapi.Value)),
             };
             return items;

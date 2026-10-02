@@ -37,8 +37,6 @@ It contains no game files. To uninstall, delete `winhttp.dll` from the game fold
   portraits, trading and betting amounts.
 - **Maps:** where you are, the paths from here with compass directions and distances, and routes to places you know.
 - **Pictures:** written descriptions, one file per book. Done so far: *The Warlock of Firetop Mountain*.
-- **Sounds:** an optional `FFCAccess Sounds` folder next to the game for your own combat and dice sounds, organised in
-  sets per kind of book (fantasy, vehicles, sci-fi and so on) with random variation. A mod feature, not part of the game.
 - **Settings** on F9, also reachable as an *Accessibility* tab in the game's own Options screen.
 
 ## How it was made

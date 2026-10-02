@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 
 namespace FFCAccess
 {
-    [BepInPlugin("ffcaccess.screenreader", "FFC Access", "0.8.0")]
+    [BepInPlugin("ffcaccess.screenreader", "FFC Access", "0.9.0")]
     public class Plugin : BaseUnityPlugin
     {
         internal static Plugin Instance;
@@ -37,8 +37,6 @@ namespace FFCAccess
             TryPatch("text entry", () => TextEntry.Patch(harmony));
             TryPatch("portraits", () => Portraits.Patch(harmony));
             TryPatch("achievements", () => Achievements.Patch(harmony));
-
-            SoundPacks.Init();
 
             SceneManager.sceneLoaded += (scene, mode) => Log.LogInfo("Scene loaded: " + scene.name);
             Speech.Say("Fighting Fantasy Classics accessibility loaded. Press F1 for help.");
