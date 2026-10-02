@@ -49,6 +49,7 @@ namespace FFCAccess
             {
                 return false;
             }
+            OptionsEcho.OnInput(eventData);
             if (OptionsTab.InterceptInput(eventData) || ShelfNav.InterceptInput(eventData))
             {
                 return false;
