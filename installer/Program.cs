@@ -407,8 +407,8 @@ namespace FFCAccessInstaller
         }
 
         /// <summary>
-        /// Version 0.8 kept custom sounds in "FFCAccess Sounds". They now belong to the separate FFC Sounds mod, which
-        /// uses a folder called "Sounds". Move the old folder if it has sounds in it; remove it if it only has our help files.
+        /// FFC Access 0.8 created an "FFCAccess Sounds" folder; this version doesn't use it. Remove it only if it holds
+        /// nothing but the help files 0.8 wrote. If the player put sound files in it, leave it exactly as it is.
         /// </summary>
         private static void TidyOldSoundsFolder(string game)
         {
@@ -416,20 +416,10 @@ namespace FFCAccessInstaller
             if (!Directory.Exists(old)) return;
             bool hasSounds = Directory.GetFiles(old, "*", SearchOption.AllDirectories)
                 .Any(f => AudioExtensions.Contains(Path.GetExtension(f).ToLowerInvariant()));
-            string target = Path.Combine(game, "Sounds");
             if (!hasSounds)
             {
                 Directory.Delete(old, true);
-                Say("Removed the old, empty FFCAccess Sounds folder. Custom sounds are now part of the FFC Sounds mod.");
-            }
-            else if (!Directory.Exists(target))
-            {
-                Directory.Move(old, target);
-                Say("Moved your sounds from FFCAccess Sounds to the Sounds folder, used by the FFC Sounds mod.");
-            }
-            else
-            {
-                Say("Your old FFCAccess Sounds folder has sounds in it, and a Sounds folder already exists, so I left both alone.");
+                Say("Removed the FFCAccess Sounds folder, which this version no longer uses.");
             }
         }
 
