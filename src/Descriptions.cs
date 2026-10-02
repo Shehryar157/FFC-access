@@ -89,7 +89,7 @@ namespace FFCAccess
             {
                 return "Illustration, no description yet.";
             }
-            return "Illustration: " + e.Short + " Press D for more.";
+            return "Illustration: " + e.Short;
         }
 
         /// <summary>D: open the full description in a text window.</summary>

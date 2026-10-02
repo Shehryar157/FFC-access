@@ -49,6 +49,10 @@ namespace FFCAccess
             {
                 return false;
             }
+            if (OptionsTab.InterceptInput(eventData))
+            {
+                return false;
+            }
             if (Active && eventData.actionName == "Inventory")
             {
                 // Borrow the game's own Inventory key: on the book page it opens our inventory window instead.
@@ -233,6 +237,22 @@ namespace FFCAccess
             if (doc.LineCount <= 1 && doc.Text.Length == 0)
             {
                 Reload(false);
+            }
+            // The game's free-read helpers: go back, free choice, heal.
+            if (!ctrl && Input.GetKeyDown(KeyCode.B))
+            {
+                FreeRead.GoBack();
+                return true;
+            }
+            if (!ctrl && Input.GetKeyDown(KeyCode.F))
+            {
+                FreeRead.FreeChoice();
+                return true;
+            }
+            if (!ctrl && Input.GetKeyDown(KeyCode.H))
+            {
+                FreeRead.Heal();
+                return true;
             }
             if (PageMode && Input.GetKeyDown(KeyCode.PageDown))
             {

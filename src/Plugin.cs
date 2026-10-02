@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 
 namespace FFCAccess
 {
-    [BepInPlugin("ffcaccess.screenreader", "FFC Access", "0.4.0")]
+    [BepInPlugin("ffcaccess.screenreader", "FFC Access", "0.5.0")]
     public class Plugin : BaseUnityPlugin
     {
         internal static Plugin Instance;
@@ -32,6 +32,7 @@ namespace FFCAccess
             TryPatch("section reader", () => SectionReader.Patch(harmony));
             TryPatch("book reader", () => BookReader.Patch(harmony));
             TryPatch("popup reader", () => PopupReader.Patch(harmony));
+            TryPatch("options tab", () => OptionsTab.Patch(harmony));
 
             SceneManager.sceneLoaded += (scene, mode) => Log.LogInfo("Scene loaded: " + scene.name);
             Speech.Say("Fighting Fantasy Classics accessibility loaded. Press F1 for help.");
@@ -73,6 +74,16 @@ namespace FFCAccess
             if (TextWindow.HandleKeys(ctrl, shift))
             {
                 BookReader.InventoryRequested = false;
+                return;
+            }
+            // The Accessibility tab in the game's options asked for our settings menu.
+            if (OptionsTab.OpenRequested)
+            {
+                OptionsTab.OpenRequested = false;
+                if (!SettingsMenu.Open)
+                {
+                    SettingsMenu.Toggle();
+                }
                 return;
             }
             // So does our settings menu.
@@ -123,12 +134,12 @@ namespace FFCAccess
         private const string ReadingHelp =
             "On the book page, the text works like a read-only text box. Arrows move by line and letter, Control with arrows by paragraph and word, " +
             "Home and End go to the start or end of a line, Control Home and Control End to the top or bottom. Hold Shift to select, Control C copies, Control A selects all. " +
-            "Tab and Shift Tab jump between choices, and Enter or Space picks the choice you are on. D describes the illustration. In page by page layout, Page Up and Page Down turn pages.";
+            "Tab and Shift Tab jump between choices, and Enter or Space picks the choice you are on. D describes the illustration. B goes back to the previous section, F unlocks every choice in this section, H heals you; each asks first. In page by page layout, Page Up and Page Down turn pages.";
 
         private static string GlobalHelp =>
             "Keys that work anywhere: F1 help. S your stats. " + (Diagnostics.KeyboardInventoryBound ? "The game's inventory key" : "I") + " your inventory. " +
             "Stats, inventory and descriptions open in a text window; Escape closes it. F2 read the whole section again. F6 open the Adventure Sheet. " +
-            "F7 read everything on screen. F8 repeat the last message. F9 mod settings. F10 save a screen dump for the mod developer.";
+            "F7 read everything on screen. F8 repeat the last message. F9 mod settings, which are also on the Accessibility tab of the game's options. F10 save a screen dump for the mod developer.";
 
         /// <summary>F7, the fallback for screens the mod doesn't know yet: read every visible piece of text.</summary>
         private static void ReadScreen()
