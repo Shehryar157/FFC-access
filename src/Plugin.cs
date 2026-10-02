@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 
 namespace FFCAccess
 {
-    [BepInPlugin("ffcaccess.screenreader", "FFC Access", "0.6.1")]
+    [BepInPlugin("ffcaccess.screenreader", "FFC Access", "0.7.0")]
     public class Plugin : BaseUnityPlugin
     {
         internal static Plugin Instance;
@@ -117,6 +117,11 @@ namespace FFCAccess
             {
                 return;
             }
+            // An open popup works like a text box: arrows read it, Tab and Enter work its buttons.
+            if (PopupReader.HandleKeys(ctrl, shift))
+            {
+                return;
+            }
             // Reading keys come next; they only do anything on the book page.
             if (BookReader.HandleKeys(ctrl, shift))
             {
@@ -171,6 +176,7 @@ namespace FFCAccess
             "F6 open the game's Adventure Sheet. F7 read everything on screen. F8 repeat the last message. " +
             "F9 mod settings, also on the Accessibility tab of the game's options. F10 save a screen dump for the mod developer. " +
             "On the book page and in fights, S your stats. In a fight, C reads both sides, and Left and Right choose an action. " +
+            "Popups read like text: arrows move through the message, Tab moves between buttons, Enter presses one. " +
             "Stats, inventory, map and descriptions open in a text window: Enter uses an item or gives a route, Escape closes. " +
             "In a trade or bet, Left and Right change the first amount, Shift with Left and Right the second, and T reads both. " +
             "On the book shelf, Left and Right move along a row, by 5 with Control and by 10 with Alt, Up and Down change rows, Home and End go to the ends of a row. " +

@@ -117,6 +117,10 @@ namespace FFCAccess
 
         private static void Handle(object screen, object result)
         {
+            if (screen is PopupPanel && PopupReader.Active)
+            {
+                return;
+            }
             RectTransform sel = SelectionOf(screen);
             if (sel != null && !sel.gameObject.activeSelf)
             {

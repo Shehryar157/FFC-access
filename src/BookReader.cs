@@ -50,7 +50,7 @@ namespace FFCAccess
                 return false;
             }
             OptionsEcho.OnInput(eventData);
-            if (OptionsTab.InterceptInput(eventData) || ShelfNav.InterceptInput(eventData))
+            if (OptionsTab.InterceptInput(eventData) || ShelfNav.InterceptInput(eventData) || PopupReader.InterceptInput(eventData))
             {
                 return false;
             }
