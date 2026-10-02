@@ -33,6 +33,7 @@ namespace FFCAccess
             TryPatch("book reader", () => BookReader.Patch(harmony));
             TryPatch("popup reader", () => PopupReader.Patch(harmony));
             TryPatch("options tab", () => OptionsTab.Patch(harmony));
+            TryPatch("combat and dice", () => CombatReader.Patch(harmony));
 
             SceneManager.sceneLoaded += (scene, mode) => Log.LogInfo("Scene loaded: " + scene.name);
             Speech.Say("Fighting Fantasy Classics accessibility loaded. Press F1 for help.");
@@ -111,6 +112,11 @@ namespace FFCAccess
             // Letter hotkeys: never while typing in a text field, and not with Ctrl (Ctrl+S etc. are left alone).
             if (!ctrl && !TextUtil.TypingInField())
             {
+                if (Input.GetKeyDown(KeyCode.C) && CombatReader.InCombat)
+                {
+                    CombatReader.ReadStatus();
+                    return;
+                }
                 if (Input.GetKeyDown(KeyCode.S))
                 {
                     CharacterInfo.ReadStats();
@@ -137,7 +143,7 @@ namespace FFCAccess
             "Tab and Shift Tab jump between choices, and Enter or Space picks the choice you are on. D describes the illustration. B goes back to the previous section, F unlocks every choice in this section, H heals you; each asks first. In page by page layout, Page Up and Page Down turn pages.";
 
         private static string GlobalHelp =>
-            "Keys that work anywhere: F1 help. S your stats. " + (Diagnostics.KeyboardInventoryBound ? "The game's inventory key" : "I") + " your inventory. " +
+            "Keys that work anywhere: F1 help. S your stats. In a fight, C reads both sides' Skill and Stamina, and Left and Right choose an action. " + (Diagnostics.KeyboardInventoryBound ? "The game's inventory key" : "I") + " your inventory. " +
             "Stats, inventory and descriptions open in a text window; Escape closes it. F2 read the whole section again. F6 open the Adventure Sheet. " +
             "F7 read everything on screen. F8 repeat the last message. F9 mod settings, which are also on the Accessibility tab of the game's options. F10 save a screen dump for the mod developer.";
 

@@ -26,7 +26,7 @@ namespace FFCAccess
             yield return null;
             try
             {
-                Speech.SayPriority(Describe(panel), true, 2f);
+                Speech.SayEvent(Describe(panel), 2f);
                 NavAnnouncer.Reset();
             }
             catch (Exception e)

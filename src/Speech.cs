@@ -126,6 +126,17 @@ namespace FFCAccess
             priorityUntil = Time.unscaledTime + protectSeconds;
         }
 
+        /// <summary>
+        /// Speak something the game did on its own (a roll result, a combat message, a popup, a new section).
+        /// Events arriving close together queue up instead of cutting each other off.
+        /// </summary>
+        public static void SayEvent(string text, float protectSeconds = 1.5f)
+        {
+            bool interrupt = Time.unscaledTime > priorityUntil;
+            Say(text, interrupt);
+            priorityUntil = Mathf.Max(priorityUntil, Time.unscaledTime + protectSeconds);
+        }
+
         /// <summary>Speak a focus change: interrupts, unless a priority message was just spoken.</summary>
         public static void SayFocus(string text)
         {

@@ -207,7 +207,7 @@ namespace FFCAccess
         public static void OnNewSection(BBSection section)
         {
             doc.Load(BuildContent(), false);
-            Speech.SayPriority(ReadAloudText(true), true, 2.5f);
+            Speech.SayEvent(ReadAloudText(true), 2.5f);
         }
 
         public static void OnPageChanged(PageTurner turner)
