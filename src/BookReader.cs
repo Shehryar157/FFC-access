@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using HarmonyLib;
@@ -8,21 +7,13 @@ using UnityEngine;
 namespace FFCAccess
 {
     /// <summary>
-    /// Lets you review the current section like a document in NVDA's browse mode:
-    /// Up/Down move by sentence, Ctrl+Up/Down by paragraph, Tab/Shift+Tab jump between choices,
-    /// Enter picks the choice you're on. Only active on the book page itself, not in menus or popups.
+    /// Runs the reading experience on the book page: owns the SectionDocument text box, works out when the book
+    /// page is the active screen, keeps the game from also reacting to our keys, handles page-by-page layout,
+    /// and presses the game's buttons when you pick a choice.
     /// </summary>
     internal static class BookReader
     {
-        private class Line
-        {
-            public string Text;
-            public int Para;
-            public int Choice = -1;
-        }
-
-        private static readonly List<Line> lines = new List<Line>();
-        private static int cursor = -1;
+        private static readonly SectionDocument doc = new SectionDocument();
 
         /// <summary>True on frames where the book page is the screen taking input. Recomputed every frame.</summary>
         public static bool Active { get; private set; }
@@ -30,23 +21,41 @@ namespace FFCAccess
         /// <summary>True while we're flipping pages to reach a choice, so page announcements stay quiet.</summary>
         public static bool AutoTurning { get; private set; }
 
-        // Game actions we take over on the reading screen. Everything else (menu, page turning, etc.) still reaches the game.
-        private static readonly HashSet<string> StolenActions = new HashSet<string> { "NavUp", "NavDown", "Confirm" };
+        private static int blockAllUntilFrame;
+
+        // Game actions we take over on the reading screen. Menu, Cancel, Inventory etc. still reach the game.
+        private static readonly HashSet<string> StolenActions = new HashSet<string>
+        {
+            "NavUp", "NavDown", "NavLeft", "NavRight", "Confirm", "ShoulderLeft", "ShoulderRight"
+        };
+
+        private static bool PageMode => ModSettings.Layout.Value == ReadingLayout.PageByPage;
+
+        private static PageTurner Turner => SectionController.instance != null ? SectionController.instance.currentPageTurner : null;
 
         public static void Patch(Harmony harmony)
         {
-            SectionReader.Rebuilt += Rebuild;
             harmony.Patch(AccessTools.Method(typeof(InputLayerManager), "OnInputUpdate"),
                 prefix: new HarmonyMethod(typeof(BookReader), nameof(InputPrefix)));
         }
 
         /// <summary>
         /// Runs before the game handles each input action. Returning false skips the game's handler,
-        /// so on the reading screen the game never sees the keys we use.
+        /// so the game never sees keys that the mod is using.
         /// </summary>
         private static bool InputPrefix(InputActionEventData eventData)
         {
+            if (SettingsMenu.Open || Time.frameCount <= blockAllUntilFrame)
+            {
+                return false;
+            }
             return !(Active && StolenActions.Contains(eventData.actionName));
+        }
+
+        /// <summary>Keep all keys from the game for a couple of frames (used when closing our own menu with Escape).</summary>
+        public static void BlockGameInputBriefly()
+        {
+            blockAllUntilFrame = Time.frameCount + 2;
         }
 
         /// <summary>Called once per frame by the plugin.</summary>
@@ -56,6 +65,11 @@ namespace FFCAccess
             if (now != Active)
             {
                 Plugin.Log.LogInfo("Reading mode " + (now ? "on" : "off"));
+                if (now)
+                {
+                    // Coming back from a popup or menu: things may have changed (a roll unlocked a choice), so refresh.
+                    Reload(true);
+                }
             }
             Active = now;
         }
@@ -66,7 +80,7 @@ namespace FFCAccess
         /// </summary>
         private static bool ComputeActive()
         {
-            if (!SectionReader.InBook() || SectionReader.IsFlowStyle())
+            if (SettingsMenu.Open || !SectionReader.InBook() || SectionReader.IsFlowStyle())
             {
                 return false;
             }
@@ -104,30 +118,98 @@ namespace FFCAccess
             return false;
         }
 
-        /// <summary>Turn the section's paragraphs and choices into lines: one per sentence, one per choice.</summary>
-        private static void Rebuild()
+        // ---------- Building the document ----------
+
+        private static SectionContent BuildContent()
         {
-            lines.Clear();
-            cursor = -1;
-            int p = 0;
-            foreach (string para in SectionReader.Paragraphs)
+            BBSection section = SectionReader.Current;
+            PageTurner turner = Turner;
+            if (PageMode && turner != null && turner.pages != null && turner.pageIndex < turner.pages.Count)
             {
-                foreach (string s in SectionReader.Sentences(para))
-                {
-                    lines.Add(new Line { Text = s, Para = p });
-                }
-                p++;
+                // Each page remembers which token it starts at, so a page is the tokens up to where the next one starts.
+                int pi = turner.pageIndex;
+                int from = turner.pages[pi].tokenIndex;
+                int to = pi < turner.pageContentIndex && pi + 1 < turner.pages.Count ? turner.pages[pi + 1].tokenIndex : int.MaxValue;
+                return SectionReader.Build(section, from, to, false);
             }
-            for (int i = 0; i < SectionReader.Choices.Count; i++)
-            {
-                lines.Add(new Line { Para = p + i, Choice = i });
-            }
+            return SectionReader.Build(section, 0, int.MaxValue, ModSettings.AnnouncePageBreaks.Value);
         }
 
-        private static string Speak(Line line)
+        /// <summary>Rebuild the document, e.g. after a setting changed or a popup closed.</summary>
+        public static void Reload(bool keepPosition)
         {
-            return line.Choice >= 0 ? SectionReader.DescribeChoice(line.Choice) : line.Text;
+            if (!SectionReader.InBook() || SectionReader.Current == null)
+            {
+                return;
+            }
+            doc.Load(BuildContent(), keepPosition);
         }
+
+        private static string PageLabel()
+        {
+            PageTurner turner = Turner;
+            if (turner == null)
+            {
+                return "";
+            }
+            int total = turner.pageContentIndex + 1;
+            return total > 1 ? "Page " + (turner.pageIndex + 1) + " of " + total + "." : "";
+        }
+
+        /// <summary>The text to read aloud for the current document.</summary>
+        private static string ReadAloudText(bool includeHeading)
+        {
+            List<string> parts = new List<string>();
+            if (includeHeading)
+            {
+                parts.Add(SectionReader.Heading(SectionReader.Current));
+            }
+            if (PageMode)
+            {
+                parts.Add(PageLabel());
+            }
+            SectionContent c = doc.Content;
+            if (ModSettings.AutoRead.Value || !includeHeading)
+            {
+                foreach (Block b in c.Blocks)
+                {
+                    parts.Add(SectionReader.BlockSpeech(b));
+                }
+                // Mid-book pages often have no choices; only say "No choices" when there's nothing else to do.
+                if (c.Choices.Count > 0 || !PageMode)
+                {
+                    parts.Add(SectionReader.ChoicesSummary(c));
+                }
+            }
+            else
+            {
+                parts.Add(SectionReader.CountsText(c));
+            }
+            return TextUtil.Join(parts, "\n");
+        }
+
+        public static void OnNewSection(BBSection section)
+        {
+            doc.Load(BuildContent(), false);
+            Speech.SayPriority(ReadAloudText(true), true, 2.5f);
+        }
+
+        public static void OnPageChanged(PageTurner turner)
+        {
+            if (!PageMode)
+            {
+                string label = PageLabel();
+                if (label.Length > 0)
+                {
+                    Speech.SayPriority(label, true, 0.8f);
+                }
+                return;
+            }
+            doc.Load(BuildContent(), false);
+            Speech.SayPriority(ModSettings.AutoRead.Value ? ReadAloudText(false) : PageLabel() + " " + SectionReader.CountsText(doc.Content), true, 1.5f);
+        }
+
+        // ---------- Keys ----------
 
         /// <summary>Handle the reading keys. Returns true if a key was used.</summary>
         public static bool HandleKeys(bool ctrl, bool shift)
@@ -136,134 +218,71 @@ namespace FFCAccess
             {
                 return false;
             }
-            if (lines.Count == 0 && SectionReader.Current != null)
+            if (doc.LineCount <= 1 && doc.Text.Length == 0)
             {
-                SectionReader.Build(SectionReader.Current);
+                Reload(false);
             }
-            if (Input.GetKeyDown(KeyCode.DownArrow))
+            if (PageMode && Input.GetKeyDown(KeyCode.PageDown))
             {
-                if (ctrl) MoveParagraph(1); else MoveLine(1);
+                TurnPage(1);
                 return true;
             }
-            if (Input.GetKeyDown(KeyCode.UpArrow))
+            if (PageMode && Input.GetKeyDown(KeyCode.PageUp))
             {
-                if (ctrl) MoveParagraph(-1); else MoveLine(-1);
+                TurnPage(-1);
                 return true;
             }
-            if (Input.GetKeyDown(KeyCode.Tab))
-            {
-                MoveChoice(shift ? -1 : 1);
-                return true;
-            }
-            if (ctrl && Input.GetKeyDown(KeyCode.Home))
-            {
-                Jump(0, "Top");
-                return true;
-            }
-            if (ctrl && Input.GetKeyDown(KeyCode.End))
-            {
-                Jump(lines.Count - 1, "Bottom");
-                return true;
-            }
-            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
-            {
-                ActivateCurrent();
-                return true;
-            }
-            return false;
+            return doc.HandleKeys(ctrl, shift);
         }
 
-        private static void MoveLine(int dir)
+        private static void TurnPage(int dir)
         {
-            if (lines.Count == 0)
+            PageTurner turner = Turner;
+            if (turner == null || IsTurning(turner))
             {
-                Speech.Say("Nothing to read.");
                 return;
             }
-            int next = cursor + dir;
-            if (next < 0 || next >= lines.Count)
+            if (dir > 0 && !turner.CanTurnLeft())
             {
-                // Like NVDA: say we hit the edge, then repeat where we are.
-                cursor = Mathf.Clamp(cursor, 0, lines.Count - 1);
-                Speech.Say((dir < 0 ? "Top. " : "Bottom. ") + Speak(lines[cursor]));
+                Speech.Say("Last page.");
                 return;
             }
-            cursor = next;
-            Speech.Say(Speak(lines[cursor]));
+            if (dir < 0 && turner.pageIndex == 0)
+            {
+                Speech.Say("First page.");
+                return;
+            }
+            // In this game "turn left" flips forward (the page moves to the left) and "turn right" flips back.
+            if (dir > 0) turner.TurnLeft(); else turner.TurnRight();
         }
 
-        private static void MoveParagraph(int dir)
+        /// <summary>F2: read the whole section (or, in page layout, the current page) from the top.</summary>
+        public static void ReadAll()
         {
-            if (lines.Count == 0)
+            if (!SectionReader.InBook() || SectionReader.Current == null)
             {
-                Speech.Say("Nothing to read.");
+                Speech.Say("No book section is open.");
                 return;
             }
-            int currentPara = cursor >= 0 ? lines[Mathf.Min(cursor, lines.Count - 1)].Para : -1;
-            int targetPara = currentPara + dir;
-            int maxPara = lines[lines.Count - 1].Para;
-            if (targetPara < 0 || targetPara > maxPara)
-            {
-                Speech.Say(dir < 0 ? "Top." : "Bottom.");
-                return;
-            }
-            // Put the cursor on the paragraph's first line and read the whole paragraph.
-            cursor = lines.FindIndex(l => l.Para == targetPara);
-            List<string> parts = new List<string>();
-            foreach (Line l in lines)
-            {
-                if (l.Para == targetPara)
-                {
-                    parts.Add(Speak(l));
-                }
-            }
-            Speech.Say(string.Join(" ", parts.ToArray()));
+            Reload(false);
+            Speech.SayPriority(SectionReader.Heading(SectionReader.Current) + "\n" + ReadAloudText(false), true, 2.5f);
         }
 
-        private static void MoveChoice(int dir)
+        /// <summary>F3: list every choice in the section, whatever page it's on.</summary>
+        public static void ReadChoices()
         {
-            if (SectionReader.Choices.Count == 0)
+            if (!SectionReader.InBook() || SectionReader.Current == null)
             {
-                Speech.Say("No choices in this section.");
+                Speech.Say("No book section is open.");
                 return;
             }
-            int i = cursor;
-            for (int step = 0; step < lines.Count; step++)
-            {
-                i += dir;
-                if (i < 0 || i >= lines.Count)
-                {
-                    break;
-                }
-                if (lines[i].Choice >= 0)
-                {
-                    cursor = i;
-                    Speech.Say(Speak(lines[i]));
-                    return;
-                }
-            }
-            Speech.Say(dir > 0 ? "No more choices." : "No previous choices.");
+            Speech.Say(SectionReader.ChoicesSummary(SectionReader.Build(SectionReader.Current)));
         }
 
-        private static void Jump(int index, string edge)
-        {
-            if (lines.Count == 0)
-            {
-                Speech.Say("Nothing to read.");
-                return;
-            }
-            cursor = index;
-            Speech.Say(edge + ". " + Speak(lines[cursor]));
-        }
+        // ---------- Picking a choice ----------
 
-        private static void ActivateCurrent()
+        public static void ActivateChoice(StoryLink link)
         {
-            if (cursor < 0 || cursor >= lines.Count || lines[cursor].Choice < 0)
-            {
-                Speech.Say("Not on a choice. Press Tab to go to the choices.");
-                return;
-            }
-            StoryLink link = SectionReader.Choices[lines[cursor].Choice].Link;
             bool blocked = false;
             try { blocked = link.IsBlock(); } catch { }
             if (blocked)
@@ -280,7 +299,7 @@ namespace FFCAccess
         /// </summary>
         private static IEnumerator Activate(StoryLink link)
         {
-            PageTurner turner = SectionController.instance != null ? SectionController.instance.currentPageTurner : null;
+            PageTurner turner = Turner;
             if (turner == null)
             {
                 Speech.Say("Can't find the book page.");
@@ -290,8 +309,7 @@ namespace FFCAccess
             StoryLinkAction button = null;
             for (int p = 0; p < turner.pages.Count && button == null; p++)
             {
-                Page page = turner.pages[p];
-                foreach (StoryLinkAction sla in Both(page))
+                foreach (StoryLinkAction sla in Both(turner.pages[p]))
                 {
                     if (sla != null && sla.storyLink == link)
                     {

@@ -75,6 +75,14 @@ namespace FFCAccess
             }
         }
 
+        public static void SetPreferSapi(bool prefer)
+        {
+            if (loaded)
+            {
+                try { Tolk_PreferSAPI(prefer); } catch { }
+            }
+        }
+
         public static void Shutdown()
         {
             if (loaded)

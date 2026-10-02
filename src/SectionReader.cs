@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using HarmonyLib;
 using Mercury;
 using Tin;
+using Math = System.Math;
 
 namespace FFCAccess
 {
@@ -16,23 +17,39 @@ namespace FFCAccess
         public string Context;
     }
 
+    internal enum BlockKind
+    {
+        Text,
+        PageBreak,
+        Image
+    }
+
+    /// <summary>A paragraph of text, an authored page break, or an illustration.</summary>
+    internal class Block
+    {
+        public BlockKind Kind;
+        public string Text;
+        public string ImageKey;
+    }
+
+    /// <summary>The readable content of a section (or of one page of it).</summary>
+    internal class SectionContent
+    {
+        public List<Block> Blocks = new List<Block>();
+        public List<Choice> Choices = new List<Choice>();
+    }
+
     /// <summary>
-    /// Builds a readable version of each book section and speaks it when it opens. The text is rebuilt from
-    /// the section's token list (the same data the game lays out), so it works the same in page mode and flow
-    /// mode and isn't split up by page breaks.
+    /// Turns a book section into readable content, and hooks the game so we know when sections and pages change.
+    /// The text is rebuilt from the section's token list (the same data the game lays out), so it doesn't depend
+    /// on how the game happened to split it across pages.
     /// </summary>
     internal static class SectionReader
     {
-        public static List<string> Paragraphs = new List<string>();
-        public static List<Choice> Choices = new List<Choice>();
-
-        /// <summary>Raised whenever the section has been rebuilt, so the reader can reset its cursor.</summary>
-        public static event Action Rebuilt;
-
         private static BBSection lastSpoken;
         private static bool sectionChanged;
 
-        // The end of a sentence: . ! ? or … possibly followed by closing quotes or brackets.
+        // The end of a sentence: . ! ? or … possibly followed by closing quotes or brackets, then a space.
         private static readonly Regex SentenceEnd = new Regex("[.!?…][\"'’”)\\]]*\\s", RegexOptions.Compiled);
 
         public static void Patch(Harmony harmony)
@@ -87,15 +104,7 @@ namespace FFCAccess
                 lastSpoken = section;
                 sectionChanged = false;
                 NavAnnouncer.Reset();
-                Build(section);
-                if (Plugin.AutoRead)
-                {
-                    Speech.SayPriority(FullText(section), true, 2.5f);
-                }
-                else
-                {
-                    Speech.SayPriority(Heading(section) + " " + CountsText(), true, 1f);
-                }
+                BookReader.OnNewSection(section);
             }
             catch (Exception e)
             {
@@ -111,15 +120,11 @@ namespace FFCAccess
                 {
                     return;
                 }
-                int total = __instance.pageContentIndex + 1;
-                if (total > 1)
-                {
-                    Speech.SayPriority("Page " + (__instance.pageIndex + 1) + " of " + total, true, 0.8f);
-                }
+                BookReader.OnPageChanged(__instance);
             }
             catch (Exception e)
             {
-                Plugin.Log.LogError("Page announce failed: " + e);
+                Plugin.Log.LogError("Page change failed: " + e);
             }
         }
 
@@ -137,56 +142,62 @@ namespace FFCAccess
             return section != null && section.displayID > 0 ? "Section " + section.displayID + "." : "";
         }
 
-        public static string CountsText()
+        public static string CountsText(SectionContent c)
         {
-            if (Choices.Count == 0)
+            if (c.Choices.Count == 0)
             {
                 return "No choices.";
             }
-            return Choices.Count == 1 ? "1 choice." : Choices.Count + " choices.";
+            return c.Choices.Count == 1 ? "1 choice." : c.Choices.Count + " choices.";
         }
 
-        /// <summary>The whole section as one block of speech: heading, text, then the choices.</summary>
-        public static string FullText(BBSection section)
+        /// <summary>Everything as one block of speech: text, page breaks, illustrations, then the choices.</summary>
+        public static string FullText(SectionContent c)
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append(Heading(section)).Append('\n');
-            foreach (string p in Paragraphs)
+            foreach (Block b in c.Blocks)
             {
-                sb.Append(p).Append('\n');
+                sb.Append(BlockSpeech(b)).Append('\n');
             }
-            sb.Append(ChoicesSummary());
+            sb.Append(ChoicesSummary(c));
             return sb.ToString();
         }
 
-        public static string ChoicesSummary()
+        public static string BlockSpeech(Block b)
         {
-            if (Choices.Count == 0)
+            switch (b.Kind)
+            {
+                case BlockKind.PageBreak: return "Page break.";
+                case BlockKind.Image: return "Illustration.";
+                default: return b.Text;
+            }
+        }
+
+        public static string ChoicesSummary(SectionContent c)
+        {
+            if (c.Choices.Count == 0)
             {
                 return "No choices.";
             }
             List<string> items = new List<string>();
-            for (int i = 0; i < Choices.Count; i++)
+            for (int i = 0; i < c.Choices.Count; i++)
             {
-                items.Add(DescribeChoice(i));
+                items.Add(DescribeChoice(c, i));
             }
-            return CountsText() + " " + string.Join(". ", items.ToArray());
+            return CountsText(c) + " " + string.Join(". ", items.ToArray());
         }
 
-        /// <summary>Rebuild the section's paragraphs and choices from its tokens.</summary>
-        public static void Build(BBSection section)
+        /// <summary>
+        /// Build the readable content for tokens [from, to) of a section. Filters (conditional text) are tracked from
+        /// the very first token, so a page that starts inside a hidden stretch is handled correctly.
+        /// </summary>
+        public static SectionContent Build(BBSection section, int from = 0, int to = int.MaxValue, bool pageBreaks = true)
         {
-            Paragraphs.Clear();
-            Choices.Clear();
-            if (section != null && section.tokenList != null)
+            SectionContent result = new SectionContent();
+            if (section == null || section.tokenList == null)
             {
-                BuildFrom(section);
+                return result;
             }
-            Rebuilt?.Invoke();
-        }
-
-        private static void BuildFrom(BBSection section)
-        {
             bool filtered = false;
             StringBuilder para = new StringBuilder();
             // Where the last choice in this paragraph ended, so the next choice's context starts after it.
@@ -196,24 +207,27 @@ namespace FFCAccess
                 string t = TextUtil.Clean(para.ToString());
                 if (t.Length > 0)
                 {
-                    Paragraphs.Add(t);
+                    result.Blocks.Add(new Block { Kind = BlockKind.Text, Text = t });
                 }
                 para.Length = 0;
                 lastLinkEnd = 0;
             };
             Character ch = BBGameController.instance?.character;
-            foreach (object token in section.tokenList)
+            int count = Math.Min(section.tokenList.Count, to);
+            for (int i = 0; i < count; i++)
             {
+                object token = section.tokenList[i];
+                bool inRange = i >= from;
                 if (token is Hashtable tag)
                 {
                     string type = tag["type"] as string;
                     if (type == "filter")
                     {
-                        // A filter tag hides the text after it unless its condition is met; this only evaluates, it changes nothing.
+                        // A filter hides what follows unless its condition is met. Checking it changes nothing in the game.
                         filtered = MercuryFilter.checkFilter(tag);
                         continue;
                     }
-                    if (filtered)
+                    if (filtered || !inRange)
                     {
                         continue;
                     }
@@ -222,9 +236,19 @@ namespace FFCAccess
                         case "clearline":
                         case "parabreak":
                         case "linebreak":
+                            endPara();
+                            break;
                         case "pagebreak":
                         case "forcePagebreak":
                             endPara();
+                            if (pageBreaks)
+                            {
+                                result.Blocks.Add(new Block { Kind = BlockKind.PageBreak });
+                            }
+                            break;
+                        case "image":
+                            endPara();
+                            result.Blocks.Add(new Block { Kind = BlockKind.Image, ImageKey = tag["value"] as string });
                             break;
                         case "showItemName":
                         {
@@ -247,7 +271,7 @@ namespace FFCAccess
                     }
                     continue;
                 }
-                if (filtered)
+                if (filtered || !inRange)
                 {
                     continue;
                 }
@@ -267,14 +291,15 @@ namespace FFCAccess
                         }
                     }
                     string words = LinkWords(link);
-                    string context = TextUtil.Clean(before.Substring(System.Math.Min(start, before.Length)) + " " + words);
+                    string context = TextUtil.Clean(before.Substring(Math.Min(start, before.Length)) + " " + words);
                     context = context.TrimStart(',', ';', ':', ' ', '-');
                     para.Append(words).Append(' ');
                     lastLinkEnd = para.Length;
-                    Choices.Add(new Choice { Link = link, Context = context.Length > 0 ? context : words });
+                    result.Choices.Add(new Choice { Link = link, Context = context.Length > 0 ? context : words });
                 }
             }
             endPara();
+            return result;
         }
 
         /// <summary>Split a paragraph into sentences, the reader's "lines".</summary>
@@ -284,7 +309,7 @@ namespace FFCAccess
             int start = 0;
             foreach (Match m in SentenceEnd.Matches(paragraph + " "))
             {
-                int end = System.Math.Min(m.Index + m.Length, paragraph.Length);
+                int end = Math.Min(m.Index + m.Length, paragraph.Length);
                 string s = paragraph.Substring(start, end - start).Trim();
                 if (s.Length > 0)
                 {
@@ -321,10 +346,10 @@ namespace FFCAccess
         }
 
         /// <summary>"Choice 2 of 3: if you go left, turn to 12, fight, unavailable". Availability is checked live.</summary>
-        public static string DescribeChoice(int index)
+        public static string DescribeChoice(SectionContent c, int index)
         {
-            Choice c = Choices[index];
-            return "Choice " + (index + 1) + " of " + Choices.Count + ": " + c.Context + LinkSuffix(c.Link);
+            Choice ch = c.Choices[index];
+            return "Choice " + (index + 1) + " of " + c.Choices.Count + ": " + ch.Context + LinkSuffix(ch.Link);
         }
 
         /// <summary>A choice's words plus its kind, used when the game's own highlight lands on it.</summary>
@@ -380,35 +405,6 @@ namespace FFCAccess
                 sb.Append(", unavailable");
             }
             return sb.ToString();
-        }
-
-        /// <summary>F2: read the whole section again from the top.</summary>
-        public static void RepeatSection()
-        {
-            BBSection section = Current;
-            if (section == null || !InBook())
-            {
-                Speech.Say("No book section is open.");
-                return;
-            }
-            Build(section);
-            Speech.SayPriority(FullText(section), true, 2.5f);
-        }
-
-        /// <summary>F3: list the choices.</summary>
-        public static void ReadChoices()
-        {
-            BBSection section = Current;
-            if (section == null || !InBook())
-            {
-                Speech.Say("No book section is open.");
-                return;
-            }
-            if (Choices.Count == 0 && Paragraphs.Count == 0)
-            {
-                Build(section);
-            }
-            Speech.Say(ChoicesSummary());
         }
     }
 }
