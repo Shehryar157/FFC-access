@@ -256,6 +256,8 @@ namespace FFCAccess
             return DescribeControl(target) + ", " + (navIndex + 1) + " of " + list.Count;
         }
 
+        private static int lastShelfRow = -1;
+
         public static string DescribeBook(GameObject shelfSlot)
         {
             if (shelfSlot == null)
@@ -283,7 +285,19 @@ namespace FFCAccess
             {
                 parts.Add("adventure in progress");
             }
-            return string.Join(", ", parts.ToArray());
+            string text = string.Join(", ", parts.ToArray());
+            int row, rows, col, cols;
+            if (ShelfNav.Position(out row, out rows, out col, out cols))
+            {
+                text += ", " + (col + 1) + " of " + cols;
+                // Say the row only when it changes, so moving along a row stays short.
+                if (row != lastShelfRow)
+                {
+                    text = "Row " + (row + 1) + " of " + rows + ". " + text;
+                    lastShelfRow = row;
+                }
+            }
+            return text;
         }
 
         private static string DescribeOptions(OptionsMenu om, object result, out GameObject target)

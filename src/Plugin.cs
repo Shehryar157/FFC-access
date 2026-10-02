@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 
 namespace FFCAccess
 {
-    [BepInPlugin("ffcaccess.screenreader", "FFC Access", "0.6.0")]
+    [BepInPlugin("ffcaccess.screenreader", "FFC Access", "0.6.1")]
     public class Plugin : BaseUnityPlugin
     {
         internal static Plugin Instance;
@@ -107,6 +107,11 @@ namespace FFCAccess
                 CharacterInfo.ReadInventory();
                 return;
             }
+            // The book shelf: Home and End within a row.
+            if (ShelfNav.HandleKeys(ctrl))
+            {
+                return;
+            }
             // Trade and bet popups: amounts on Left/Right.
             if (Trading.HandleKeys(shift))
             {
@@ -136,7 +141,7 @@ namespace FFCAccess
                     MapReader.Open();
                     return;
                 }
-                if (Input.GetKeyDown(KeyCode.S))
+                if (Input.GetKeyDown(KeyCode.S) && StatsKeyActive())
                 {
                     CharacterInfo.ReadStats();
                     return;
@@ -162,11 +167,25 @@ namespace FFCAccess
             "Tab and Shift Tab jump between choices, and Enter or Space picks the choice you are on. D describes the illustration. B goes back to the previous section, F unlocks every choice in this section, H heals you; each asks first. In page by page layout, Page Up and Page Down turn pages.";
 
         private static string GlobalHelp =>
-            "Keys that work anywhere: F1 help. S your stats. In a fight, C reads both sides' Skill and Stamina, and Left and Right choose an action. In a trade or bet, Left and Right change the first amount, Shift with Left and Right the second, and T reads both. " + (Diagnostics.KeyboardInventoryBound ? "The game's inventory key" : "I") + " your inventory. " +
-            "Stats, inventory and descriptions open in a text window; Escape closes it. F2 read the whole section again. F6 open the Adventure Sheet. " +
-            "F7 read everything on screen. F8 repeat the last message. F9 mod settings, which are also on the Accessibility tab of the game's options. F10 save a screen dump for the mod developer.";
+            "Keys that work anywhere: F1 help. F2 read the whole section again. I your inventory. M the map, in books that have one. " +
+            "F6 open the game's Adventure Sheet. F7 read everything on screen. F8 repeat the last message. " +
+            "F9 mod settings, also on the Accessibility tab of the game's options. F10 save a screen dump for the mod developer. " +
+            "On the book page and in fights, S your stats. In a fight, C reads both sides, and Left and Right choose an action. " +
+            "Stats, inventory, map and descriptions open in a text window: Enter uses an item or gives a route, Escape closes. " +
+            "In a trade or bet, Left and Right change the first amount, Shift with Left and Right the second, and T reads both. " +
+            "On the book shelf, Left and Right move along a row, Up and Down change rows, Home and End go to the ends of a row. " +
+            "In the gallery, D describes the picture.";
 
-        private static bool GalleryOpen()
+        /// <summary>
+        /// S is also the game's "down" key (W A S D move). It only means "stats" on the book page and in fights,
+        /// where the game has no use for down; everywhere else it's left to the game.
+        /// </summary>
+        internal static bool StatsKeyActive()
+        {
+            return (BookReader.Active || CombatReader.InCombat) && !TextUtil.TypingInField();
+        }
+
+        internal static bool GalleryOpen()
         {
             GalleryMenu gm = UnityEngine.Object.FindObjectOfType<GalleryMenu>();
             return gm != null && gm.tweener != null && gm.tweener.visible;

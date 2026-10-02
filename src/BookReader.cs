@@ -49,7 +49,16 @@ namespace FFCAccess
             {
                 return false;
             }
-            if (OptionsTab.InterceptInput(eventData))
+            if (OptionsTab.InterceptInput(eventData) || ShelfNav.InterceptInput(eventData))
+            {
+                return false;
+            }
+            // W, A, S and D are also the game's movement keys. Where the mod uses S or D, don't let the game move too.
+            if (eventData.actionName == "NavDown" && Input.GetKey(KeyCode.S) && Plugin.StatsKeyActive())
+            {
+                return false;
+            }
+            if (eventData.actionName == "NavRight" && Input.GetKey(KeyCode.D) && Plugin.GalleryOpen())
             {
                 return false;
             }
@@ -115,23 +124,7 @@ namespace FFCAccess
             catch
             {
             }
-            for (int i = ilm.inputLayers.Count - 1; i >= 0; i--)
-            {
-                InputLayer layer = ilm.inputLayers[i];
-                if (layer == null)
-                {
-                    continue;
-                }
-                if (layer.id != null && layer.id.StartsWith("Book-"))
-                {
-                    return true;
-                }
-                if (layer.blockInputs)
-                {
-                    return false;
-                }
-            }
-            return false;
+            return InputLayers.Receiving("Book-");
         }
 
         // ---------- Building the document ----------

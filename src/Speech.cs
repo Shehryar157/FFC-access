@@ -56,6 +56,14 @@ namespace FFCAccess
                 // Tolk loads its screen reader drivers (nvdaControllerClient64.dll etc.) by name, so they
                 // must be findable: point the DLL search path at our plugin folder.
                 SetDllDirectory(pluginDir);
+                // Tolk asks Windows for its screen reader drivers by name. Windows doesn't always search our folder
+                // (the search-path setting above didn't hold inside the game), so load them ourselves first: once a
+                // DLL is loaded, a request for it by name gets the copy already in memory.
+                foreach (string driver in new[] { "nvdaControllerClient64.dll", "SAAPI64.dll" })
+                {
+                    IntPtr h = LoadLibrary(Path.Combine(pluginDir, driver));
+                    Plugin.Log.LogInfo("Preload " + driver + ": " + (h != IntPtr.Zero ? "ok" : "failed, error " + Marshal.GetLastWin32Error()));
+                }
                 if (LoadLibrary(Path.Combine(pluginDir, "Tolk.dll")) == IntPtr.Zero)
                 {
                     Plugin.Log.LogError("Could not load Tolk.dll from " + pluginDir);
