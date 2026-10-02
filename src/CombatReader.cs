@@ -34,6 +34,20 @@ namespace FFCAccess
                 postfix: new HarmonyMethod(t, nameof(EnemyHitPostfix)));
             harmony.Patch(AccessTools.Method(typeof(AdventureSheet), nameof(AdventureSheet.TakeHitAll)),
                 postfix: new HarmonyMethod(t, nameof(PlayerHitPostfix)));
+
+            // Sounds: the end of a fight, Luck tests, and the game's own hit and dice sounds.
+            harmony.Patch(AccessTools.Method(typeof(CombatController), nameof(CombatController.CheckWin)),
+                postfix: new HarmonyMethod(t, nameof(CheckWinPostfix)));
+            harmony.Patch(AccessTools.Method(typeof(CombatController), nameof(CombatController.CheckLose)),
+                postfix: new HarmonyMethod(t, nameof(CheckLosePostfix)));
+            harmony.Patch(AccessTools.Method(typeof(CombatController), nameof(CombatController.Lucky)),
+                postfix: new HarmonyMethod(t, nameof(LuckyPostfix)));
+            harmony.Patch(AccessTools.Method(typeof(CombatController), nameof(CombatController.Unlucky)),
+                postfix: new HarmonyMethod(t, nameof(UnluckyPostfix)));
+            harmony.Patch(AccessTools.Method(typeof(BBSoundFX), nameof(BBSoundFX.BBPlayCombatHit)),
+                prefix: new HarmonyMethod(t, nameof(GameHitSoundPrefix)));
+            harmony.Patch(AccessTools.Method(typeof(BBSoundFX), nameof(BBSoundFX.BBPlayRoll)),
+                prefix: new HarmonyMethod(t, nameof(GameDiceSoundPrefix)));
         }
 
         public static bool InCombat => CombatController.instance != null && CombatController.instance.inCombat;
@@ -188,7 +202,11 @@ namespace FFCAccess
                 {
                     if (sheet.player_total > sheet.enemy_total) parts.Add("You win the round.");
                     else if (sheet.player_total < sheet.enemy_total) parts.Add(enemyName + " wins the round.");
-                    else parts.Add("A draw: nobody is hurt.");
+                    else
+                    {
+                        parts.Add("A draw: nobody is hurt.");
+                        SoundPacks.Play(SoundPacks.Draw);
+                    }
                 }
                 Speech.SayEvent(string.Join(" ", parts.ToArray()));
             }
@@ -232,6 +250,7 @@ namespace FFCAccess
             {
                 return;
             }
+            SoundPacks.Play(SoundPacks.PlayerHit);
             string name = TextUtil.Clean(__instance["title"]?.Value?.text);
             Speech.SayEvent((string.IsNullOrEmpty(name) ? "Enemy" : name) + " " + StatName("ff combat stamina name", "Stamina") + " " + __instance["stamina"].stat + ".");
         }
@@ -242,11 +261,49 @@ namespace FFCAccess
             {
                 return;
             }
+            SoundPacks.Play(SoundPacks.EnemyHit);
             AdventureSheetStat s = CombatController.instance.playerSheet["stamina"];
             if (s != null)
             {
                 Speech.SayEvent("Your " + StatName("ff combat stamina name", "Stamina") + " " + s.stat + ".");
             }
+        }
+
+        // ---------- Sounds ----------
+
+        private static void CheckWinPostfix(bool __result)
+        {
+            if (__result) SoundPacks.Play(SoundPacks.EnemyDefeated);
+        }
+
+        private static void CheckLosePostfix(bool __result)
+        {
+            if (__result) SoundPacks.Play(SoundPacks.PlayerDefeated);
+        }
+
+        private static void LuckyPostfix()
+        {
+            SoundPacks.Play(SoundPacks.Lucky);
+        }
+
+        private static void UnluckyPostfix()
+        {
+            SoundPacks.Play(SoundPacks.Unlucky);
+        }
+
+        /// <summary>
+        /// The game plays one generic hit sound for every hit. When the current set has its own hit sounds, ours play
+        /// instead (from the damage hooks, which know who was hit), so skip the game's.
+        /// </summary>
+        private static bool GameHitSoundPrefix()
+        {
+            return !(SoundPacks.Has(SoundPacks.PlayerHit) || SoundPacks.Has(SoundPacks.EnemyHit));
+        }
+
+        /// <summary>Dice sound: play the set's own if it has one, otherwise let the game play its usual sound.</summary>
+        private static bool GameDiceSoundPrefix()
+        {
+            return !SoundPacks.Play(SoundPacks.Dice);
         }
 
         /// <summary>C during a fight: both sides' current numbers.</summary>

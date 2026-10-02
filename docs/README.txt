@@ -85,6 +85,14 @@ Settings (F9)
 Settings are saved in BepInEx\config\ffcaccess.screenreader.cfg.
 
 
+Combat and dice sounds
+----------------------
+
+The mod adds a folder called "FFCAccess Sounds" to the game folder. Put sound files in it to give fights and dice
+their own sounds, per kind of book or per book; "How to add sounds.txt" in that folder explains how. Empty folders
+simply leave the game's own sounds playing. This is part of the mod, not the game.
+
+
 Picture descriptions
 --------------------
 
