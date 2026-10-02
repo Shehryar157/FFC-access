@@ -24,25 +24,24 @@ namespace FFCAccess
             List<int> paragraphs = new List<int>();
             choiceOfLine.Clear();
             imageOfLine.Clear();
-            int para = 0;
+            // One line per sentence; a choice is its own line, in the text where it occurs.
             foreach (Block b in content.Blocks)
             {
-                if (b.Kind == BlockKind.Text)
+                switch (b.Kind)
                 {
-                    foreach (string sentence in SectionReader.Sentences(b.Text))
-                    {
-                        Add(lines, paragraphs, sentence, para, -1, null);
-                    }
+                    case BlockKind.Text:
+                        foreach (string sentence in SectionReader.Sentences(b.Text))
+                        {
+                            Add(lines, paragraphs, sentence, b.Para, -1, null);
+                        }
+                        break;
+                    case BlockKind.Choice:
+                        Add(lines, paragraphs, SectionReader.DescribeChoice(content, b.ChoiceIndex), b.Para, b.ChoiceIndex, null);
+                        break;
+                    default:
+                        Add(lines, paragraphs, SectionReader.BlockSpeech(content, b), b.Para, -1, b.ImageKey);
+                        break;
                 }
-                else
-                {
-                    Add(lines, paragraphs, SectionReader.BlockSpeech(b), para, -1, b.ImageKey);
-                }
-                para++;
-            }
-            for (int i = 0; i < content.Choices.Count; i++)
-            {
-                Add(lines, paragraphs, SectionReader.DescribeChoice(content, i), para++, i, null);
             }
             if (lines.Count == 0)
             {

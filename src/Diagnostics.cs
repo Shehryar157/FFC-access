@@ -19,7 +19,8 @@ namespace FFCAccess
 
         public static void TryLogBindings()
         {
-            if (loggedBindings || !ReInput.isReady)
+            // Checking every frame would be wasteful; once a second is plenty.
+            if (loggedBindings || !ReInput.isReady || Time.frameCount % 60 != 0)
             {
                 return;
             }
@@ -28,7 +29,7 @@ namespace FFCAccess
             {
                 return;
             }
-            loggedBindings = true;
+            int found = 0;
             StringBuilder sb = new StringBuilder("Game key bindings:\n");
             try
             {
@@ -36,6 +37,7 @@ namespace FFCAccess
                 {
                     foreach (ActionElementMap aem in map.AllMaps)
                     {
+                        found++;
                         InputAction action = ReInput.mapping.GetAction(aem.actionId);
                         if (action != null && action.name == "Inventory" && map.enabled)
                         {
@@ -52,6 +54,12 @@ namespace FFCAccess
             {
                 sb.Append("  failed: ").Append(e.Message);
             }
+            // The game loads its keyboard settings a little after starting; until then there's nothing to log.
+            if (found == 0)
+            {
+                return;
+            }
+            loggedBindings = true;
             Plugin.Log.LogInfo(sb.ToString());
         }
 

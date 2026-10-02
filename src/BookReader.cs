@@ -181,14 +181,15 @@ namespace FFCAccess
             SectionContent c = doc.Content;
             if (ModSettings.AutoRead.Value || !includeHeading)
             {
+                // Choices are read where they occur in the text.
                 foreach (Block b in c.Blocks)
                 {
-                    parts.Add(SectionReader.BlockSpeech(b));
+                    parts.Add(SectionReader.BlockSpeech(c, b));
                 }
-                // Mid-book pages often have no choices; only say "No choices" when there's nothing else to do.
-                if (c.Choices.Count > 0 || !PageMode)
+                // Mid-book pages often have no choices; only say so at the end of a whole section.
+                if (c.Choices.Count == 0 && !PageMode)
                 {
-                    parts.Add(SectionReader.ChoicesSummary(c));
+                    parts.Add("No choices.");
                 }
             }
             else

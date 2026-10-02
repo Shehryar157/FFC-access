@@ -54,6 +54,7 @@ namespace FFCAccess
             if (!string.IsNullOrEmpty(text))
             {
                 Speech.Say(text);
+                NavAnnouncer.Remember(screen, target, text);
             }
         }
     }

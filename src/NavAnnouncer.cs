@@ -62,6 +62,13 @@ namespace FFCAccess
             }
         }
 
+        /// <summary>Record an announcement made elsewhere for this screen, so it isn't repeated on the next refresh.</summary>
+        public static void Remember(object screen, GameObject target, string text)
+        {
+            lastScreen = screen;
+            lastKey = (target != null ? target.GetInstanceID().ToString() : "-") + "|" + text;
+        }
+
         public static void Reset()
         {
             lastScreen = null;
@@ -361,18 +368,32 @@ namespace FFCAccess
                     return DescribeControl(target);
                 }
                 target = item.buttons[0].transform.parent.gameObject;
+                // Rows like "Mood" or "Library sorting" have arrow buttons either side of the value; the row's
+                // own text already says the value, so only mention buttons that have real labels.
                 List<string> labels = new List<string>();
+                List<string> arrows = new List<string> { "left", "right", "<", ">", "previous", "next" };
                 foreach (Button b in item.buttons)
                 {
                     if (b != null && b.gameObject.activeInHierarchy)
                     {
-                        labels.Add(TextUtil.LabelFor(b.gameObject));
+                        string l = TextUtil.LabelFor(b.gameObject);
+                        if (!arrows.Contains(l.ToLowerInvariant()))
+                        {
+                            labels.Add(l);
+                        }
                     }
                 }
-                string row = RowLabel(target, null);
-                return TextUtil.Join(new[] { row, "choices: " + string.Join(", ", labels.ToArray()) }, ", ");
+                string row = RoundLongNumbers(RowLabel(target, null));
+                return labels.Count == 0 ? row : TextUtil.Join(new[] { row, "buttons: " + string.Join(", ", labels.ToArray()) }, ", ");
             }
             return TextUtil.Humanize(item.id);
+        }
+
+        /// <summary>"60.0562228469205Hz" reads badly; round numbers with long decimals.</summary>
+        private static string RoundLongNumbers(string s)
+        {
+            return System.Text.RegularExpressions.Regex.Replace(s, @"\d+\.\d{3,}", m =>
+                System.Math.Round(double.Parse(m.Value, System.Globalization.CultureInfo.InvariantCulture)).ToString());
         }
 
         /// <summary>Text of a settings row, skipping the text inside the control itself.</summary>

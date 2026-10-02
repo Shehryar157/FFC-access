@@ -20,16 +20,22 @@ namespace FFCAccess
     internal enum BlockKind
     {
         Text,
+        Choice,
         PageBreak,
         Image
     }
 
-    /// <summary>A paragraph of text, an authored page break, or an illustration.</summary>
+    /// <summary>
+    /// A piece of a section in reading order: some text, a choice (where it occurs in the text), an authored page
+    /// break, or an illustration. Para groups pieces of the same paragraph, for Ctrl+Up/Down.
+    /// </summary>
     internal class Block
     {
         public BlockKind Kind;
         public string Text;
         public string ImageKey;
+        public int ChoiceIndex = -1;
+        public int Para;
     }
 
     /// <summary>The readable content of a section (or of one page of it).</summary>
@@ -151,22 +157,22 @@ namespace FFCAccess
             return c.Choices.Count == 1 ? "1 choice." : c.Choices.Count + " choices.";
         }
 
-        /// <summary>Everything as one block of speech: text, page breaks, illustrations, then the choices.</summary>
+        /// <summary>Everything as one block of speech, in reading order, choices where they occur.</summary>
         public static string FullText(SectionContent c)
         {
             StringBuilder sb = new StringBuilder();
             foreach (Block b in c.Blocks)
             {
-                sb.Append(BlockSpeech(b)).Append('\n');
+                sb.Append(BlockSpeech(c, b)).Append('\n');
             }
-            sb.Append(ChoicesSummary(c));
             return sb.ToString();
         }
 
-        public static string BlockSpeech(Block b)
+        public static string BlockSpeech(SectionContent c, Block b)
         {
             switch (b.Kind)
             {
+                case BlockKind.Choice: return DescribeChoice(c, b.ChoiceIndex);
                 case BlockKind.PageBreak: return "Page break.";
                 case BlockKind.Image: return Descriptions.Line(b.ImageKey);
                 default: return b.Text;
@@ -200,17 +206,29 @@ namespace FFCAccess
             }
             bool filtered = false;
             StringBuilder para = new StringBuilder();
-            // Where the last choice in this paragraph ended, so the next choice's context starts after it.
-            int lastLinkEnd = 0;
-            Action endPara = () =>
+            int paraNo = 0;
+            HashSet<string> seenChoices = new HashSet<string>();
+            // Turn whatever text is waiting into a text block (part of the current paragraph).
+            Action flushText = () =>
             {
                 string t = TextUtil.Clean(para.ToString());
                 if (t.Length > 0)
                 {
-                    result.Blocks.Add(new Block { Kind = BlockKind.Text, Text = t });
+                    result.Blocks.Add(new Block { Kind = BlockKind.Text, Text = t, Para = paraNo });
                 }
                 para.Length = 0;
-                lastLinkEnd = 0;
+            };
+            Action endPara = () =>
+            {
+                flushText();
+                paraNo++;
+            };
+            // Page breaks and pictures stand alone, in a paragraph of their own.
+            Action<Block> addOwnPara = b =>
+            {
+                endPara();
+                b.Para = paraNo++;
+                result.Blocks.Add(b);
             };
             Character ch = BBGameController.instance?.character;
             int count = Math.Min(section.tokenList.Count, to);
@@ -240,15 +258,17 @@ namespace FFCAccess
                             break;
                         case "pagebreak":
                         case "forcePagebreak":
-                            endPara();
                             if (pageBreaks)
                             {
-                                result.Blocks.Add(new Block { Kind = BlockKind.PageBreak });
+                                addOwnPara(new Block { Kind = BlockKind.PageBreak });
+                            }
+                            else
+                            {
+                                endPara();
                             }
                             break;
                         case "image":
-                            endPara();
-                            result.Blocks.Add(new Block { Kind = BlockKind.Image, ImageKey = tag["value"] as string });
+                            addOwnPara(new Block { Kind = BlockKind.Image, ImageKey = tag["value"] as string });
                             break;
                         case "showItemName":
                         {
@@ -281,21 +301,29 @@ namespace FFCAccess
                 }
                 else if (token is StoryLink link)
                 {
+                    string words = LinkWords(link);
+                    // Some sections repeat the same choices (e.g. a row of buttons at the end); list each only once.
+                    string key = words + "|" + link.sectionID;
+                    if (!seenChoices.Add(key))
+                    {
+                        continue;
+                    }
+                    // Split the waiting text: whole sentences stay text, and the unfinished sentence leading up to
+                    // the link becomes part of the choice, so the choice reads "if you go left, turn to 12".
                     string before = para.ToString();
-                    int start = lastLinkEnd;
+                    int start = 0;
                     foreach (Match m in SentenceEnd.Matches(before))
                     {
-                        if (m.Index + m.Length > start)
-                        {
-                            start = m.Index + m.Length;
-                        }
+                        start = Math.Max(start, m.Index + m.Length);
                     }
-                    string words = LinkWords(link);
-                    string context = TextUtil.Clean(before.Substring(Math.Min(start, before.Length)) + " " + words);
+                    start = Math.Min(start, before.Length);
+                    para.Length = 0;
+                    para.Append(before.Substring(0, start));
+                    flushText();
+                    string context = TextUtil.Clean(before.Substring(start) + " " + words);
                     context = context.TrimStart(',', ';', ':', ' ', '-');
-                    para.Append(words).Append(' ');
-                    lastLinkEnd = para.Length;
                     result.Choices.Add(new Choice { Link = link, Context = context.Length > 0 ? context : words });
+                    result.Blocks.Add(new Block { Kind = BlockKind.Choice, ChoiceIndex = result.Choices.Count - 1, Para = paraNo });
                 }
             }
             endPara();
