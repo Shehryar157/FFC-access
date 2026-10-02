@@ -2,24 +2,38 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 using HarmonyLib;
 using Mercury;
 using Tin;
 
 namespace FFCAccess
 {
+    /// <summary>One choice in a section: the game's link object plus the words leading up to it.</summary>
+    internal class Choice
+    {
+        public StoryLink Link;
+        public string Context;
+    }
+
     /// <summary>
-    /// Reads book sections aloud. The text is rebuilt from the section's token list (the same data the game
-    /// lays out), so it works the same in page mode and flow mode and isn't split up by page breaks.
+    /// Builds a readable version of each book section and speaks it when it opens. The text is rebuilt from
+    /// the section's token list (the same data the game lays out), so it works the same in page mode and flow
+    /// mode and isn't split up by page breaks.
     /// </summary>
     internal static class SectionReader
     {
         public static List<string> Paragraphs = new List<string>();
-        public static List<StoryLink> Links = new List<StoryLink>();
-        public static int ParagraphIndex = -1;
+        public static List<Choice> Choices = new List<Choice>();
+
+        /// <summary>Raised whenever the section has been rebuilt, so the reader can reset its cursor.</summary>
+        public static event Action Rebuilt;
 
         private static BBSection lastSpoken;
         private static bool sectionChanged;
+
+        // The end of a sentence: . ! ? or … possibly followed by closing quotes or brackets.
+        private static readonly Regex SentenceEnd = new Regex("[.!?…][\"'’”)\\]]*\\s", RegexOptions.Compiled);
 
         public static void Patch(Harmony harmony)
         {
@@ -45,6 +59,13 @@ namespace FFCAccess
             }
         }
 
+        public static bool InBook()
+        {
+            return BBGameController.instance != null && BBGameController.instance.BookIsLoaded && SectionController.instance != null;
+        }
+
+        public static BBSection Current => BBGameController.instance?.section;
+
         private static void ChangeSectionPostfix()
         {
             sectionChanged = true;
@@ -58,7 +79,7 @@ namespace FFCAccess
                 {
                     return;
                 }
-                BBSection section = BBGameController.instance?.section;
+                BBSection section = Current;
                 if (section == null || (section == lastSpoken && !sectionChanged))
                 {
                     return;
@@ -66,7 +87,15 @@ namespace FFCAccess
                 lastSpoken = section;
                 sectionChanged = false;
                 NavAnnouncer.Reset();
-                ReadSection(section, true);
+                Build(section);
+                if (Plugin.AutoRead)
+                {
+                    Speech.SayPriority(FullText(section), true, 2.5f);
+                }
+                else
+                {
+                    Speech.SayPriority(Heading(section) + " " + CountsText(), true, 1f);
+                }
             }
             catch (Exception e)
             {
@@ -78,7 +107,7 @@ namespace FFCAccess
         {
             try
             {
-                if (IsFlowStyle())
+                if (IsFlowStyle() || BookReader.AutoTurning)
                 {
                     return;
                 }
@@ -97,68 +126,71 @@ namespace FFCAccess
         /// <summary>In flow style the text appears a chunk at a time (pausing for rolls), so speak each chunk as it arrives.</summary>
         private static void FlowTextPostfix(object content)
         {
-            if (!IsFlowStyle() || !(content is string s))
+            if (IsFlowStyle() && content is string s)
             {
-                return;
+                Speech.Say(s, false);
             }
-            Speech.Say(s, false);
         }
 
-        /// <summary>Rebuild the section's text and choices, and optionally speak it.</summary>
-        public static void ReadSection(BBSection section, bool speak)
+        public static string Heading(BBSection section)
         {
-            Build(section);
-            ParagraphIndex = -1;
-            if (!speak)
-            {
-                return;
-            }
-            Speech.SayPriority(FullText(section), true, 2.5f);
+            return section != null && section.displayID > 0 ? "Section " + section.displayID + "." : "";
         }
 
+        public static string CountsText()
+        {
+            if (Choices.Count == 0)
+            {
+                return "No choices.";
+            }
+            return Choices.Count == 1 ? "1 choice." : Choices.Count + " choices.";
+        }
+
+        /// <summary>The whole section as one block of speech: heading, text, then the choices.</summary>
         public static string FullText(BBSection section)
         {
             StringBuilder sb = new StringBuilder();
-            if (section != null && section.displayID > 0)
-            {
-                sb.Append("Section ").Append(section.displayID).Append(".\n");
-            }
+            sb.Append(Heading(section)).Append('\n');
             foreach (string p in Paragraphs)
             {
                 sb.Append(p).Append('\n');
             }
-            string choices = ChoicesSummary();
-            if (choices.Length > 0)
-            {
-                sb.Append(choices);
-            }
+            sb.Append(ChoicesSummary());
             return sb.ToString();
         }
 
         public static string ChoicesSummary()
         {
-            if (Links.Count == 0)
+            if (Choices.Count == 0)
             {
-                return "";
+                return "No choices.";
             }
             List<string> items = new List<string>();
-            for (int i = 0; i < Links.Count; i++)
+            for (int i = 0; i < Choices.Count; i++)
             {
-                items.Add((i + 1) + ": " + DescribeLink(Links[i]));
+                items.Add(DescribeChoice(i));
             }
-            return (Links.Count == 1 ? "1 choice. " : Links.Count + " choices. ") + string.Join(". ", items.ToArray());
+            return CountsText() + " " + string.Join(". ", items.ToArray());
         }
 
-        private static void Build(BBSection section)
+        /// <summary>Rebuild the section's paragraphs and choices from its tokens.</summary>
+        public static void Build(BBSection section)
         {
             Paragraphs.Clear();
-            Links.Clear();
-            if (section == null || section.tokenList == null)
+            Choices.Clear();
+            if (section != null && section.tokenList != null)
             {
-                return;
+                BuildFrom(section);
             }
+            Rebuilt?.Invoke();
+        }
+
+        private static void BuildFrom(BBSection section)
+        {
             bool filtered = false;
             StringBuilder para = new StringBuilder();
+            // Where the last choice in this paragraph ended, so the next choice's context starts after it.
+            int lastLinkEnd = 0;
             Action endPara = () =>
             {
                 string t = TextUtil.Clean(para.ToString());
@@ -167,6 +199,7 @@ namespace FFCAccess
                     Paragraphs.Add(t);
                 }
                 para.Length = 0;
+                lastLinkEnd = 0;
             };
             Character ch = BBGameController.instance?.character;
             foreach (object token in section.tokenList)
@@ -176,6 +209,7 @@ namespace FFCAccess
                     string type = tag["type"] as string;
                     if (type == "filter")
                     {
+                        // A filter tag hides the text after it unless its condition is met; this only evaluates, it changes nothing.
                         filtered = MercuryFilter.checkFilter(tag);
                         continue;
                     }
@@ -223,11 +257,50 @@ namespace FFCAccess
                 }
                 else if (token is StoryLink link)
                 {
-                    para.Append(LinkWords(link)).Append(' ');
-                    Links.Add(link);
+                    string before = para.ToString();
+                    int start = lastLinkEnd;
+                    foreach (Match m in SentenceEnd.Matches(before))
+                    {
+                        if (m.Index + m.Length > start)
+                        {
+                            start = m.Index + m.Length;
+                        }
+                    }
+                    string words = LinkWords(link);
+                    string context = TextUtil.Clean(before.Substring(System.Math.Min(start, before.Length)) + " " + words);
+                    context = context.TrimStart(',', ';', ':', ' ', '-');
+                    para.Append(words).Append(' ');
+                    lastLinkEnd = para.Length;
+                    Choices.Add(new Choice { Link = link, Context = context.Length > 0 ? context : words });
                 }
             }
             endPara();
+        }
+
+        /// <summary>Split a paragraph into sentences, the reader's "lines".</summary>
+        public static List<string> Sentences(string paragraph)
+        {
+            List<string> result = new List<string>();
+            int start = 0;
+            foreach (Match m in SentenceEnd.Matches(paragraph + " "))
+            {
+                int end = System.Math.Min(m.Index + m.Length, paragraph.Length);
+                string s = paragraph.Substring(start, end - start).Trim();
+                if (s.Length > 0)
+                {
+                    result.Add(s);
+                }
+                start = end;
+            }
+            if (start < paragraph.Length)
+            {
+                string rest = paragraph.Substring(start).Trim();
+                if (rest.Length > 0)
+                {
+                    result.Add(rest);
+                }
+            }
+            return result;
         }
 
         public static string LinkWords(StoryLink link)
@@ -247,16 +320,27 @@ namespace FFCAccess
             return TextUtil.Clean(string.Join(" ", words.ToArray()));
         }
 
-        /// <summary>Spoken description of a choice: its words, what kind of choice it is, and whether it's available.</summary>
+        /// <summary>"Choice 2 of 3: if you go left, turn to 12, fight, unavailable". Availability is checked live.</summary>
+        public static string DescribeChoice(int index)
+        {
+            Choice c = Choices[index];
+            return "Choice " + (index + 1) + " of " + Choices.Count + ": " + c.Context + LinkSuffix(c.Link);
+        }
+
+        /// <summary>A choice's words plus its kind, used when the game's own highlight lands on it.</summary>
         public static string DescribeLink(StoryLink link)
         {
             if (link == null)
             {
                 return "";
             }
-            List<string> parts = new List<string>();
             string words = LinkWords(link);
-            parts.Add(words.Length > 0 ? words : "Continue");
+            return (words.Length > 0 ? words : "Continue") + LinkSuffix(link);
+        }
+
+        private static string LinkSuffix(StoryLink link)
+        {
+            StringBuilder sb = new StringBuilder();
             string kind = null;
             try
             {
@@ -281,7 +365,7 @@ namespace FFCAccess
             }
             if (kind != null)
             {
-                parts.Add(kind);
+                sb.Append(", ").Append(kind);
             }
             bool blocked = false;
             try
@@ -293,60 +377,38 @@ namespace FFCAccess
             }
             if (blocked)
             {
-                parts.Add("unavailable");
+                sb.Append(", unavailable");
             }
-            return string.Join(", ", parts.ToArray());
+            return sb.ToString();
         }
 
+        /// <summary>F2: read the whole section again from the top.</summary>
         public static void RepeatSection()
         {
-            BBSection section = BBGameController.instance?.section;
-            if (section == null || !InBook())
-            {
-                Speech.Say("No book section is open.");
-                return;
-            }
-            ReadSection(section, true);
-        }
-
-        public static void ReadChoices()
-        {
-            BBSection section = BBGameController.instance?.section;
+            BBSection section = Current;
             if (section == null || !InBook())
             {
                 Speech.Say("No book section is open.");
                 return;
             }
             Build(section);
-            string c = ChoicesSummary();
-            Speech.Say(c.Length > 0 ? c : "No choices in this section.");
+            Speech.SayPriority(FullText(section), true, 2.5f);
         }
 
-        /// <summary>Step through the section a paragraph at a time.</summary>
-        public static void StepParagraph(int dir)
+        /// <summary>F3: list the choices.</summary>
+        public static void ReadChoices()
         {
-            BBSection section = BBGameController.instance?.section;
+            BBSection section = Current;
             if (section == null || !InBook())
             {
                 Speech.Say("No book section is open.");
                 return;
             }
-            if (Paragraphs.Count == 0)
+            if (Choices.Count == 0 && Paragraphs.Count == 0)
             {
                 Build(section);
             }
-            if (Paragraphs.Count == 0)
-            {
-                Speech.Say("No text.");
-                return;
-            }
-            ParagraphIndex = System.Math.Max(0, System.Math.Min(Paragraphs.Count - 1, ParagraphIndex + dir));
-            Speech.Say(Paragraphs[ParagraphIndex]);
-        }
-
-        public static bool InBook()
-        {
-            return BBGameController.instance != null && BBGameController.instance.BookIsLoaded && SectionController.instance != null;
+            Speech.Say(ChoicesSummary());
         }
     }
 }

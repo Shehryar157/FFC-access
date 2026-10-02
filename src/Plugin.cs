@@ -1,8 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -12,14 +10,18 @@ using UnityEngine.SceneManagement;
 
 namespace FFCAccess
 {
-    [BepInPlugin("ffcaccess.screenreader", "FFC Access", "0.1.0")]
+    [BepInPlugin("ffcaccess.screenreader", "FFC Access", "0.2.0")]
     public class Plugin : BaseUnityPlugin
     {
         internal static Plugin Instance;
         internal static ManualLogSource Log;
         internal static string PluginDir;
 
-        private ConfigEntry<bool> preferSapi;
+        private static ConfigEntry<bool> autoRead;
+
+        /// <summary>Read each new section aloud in full as soon as it opens.</summary>
+        internal static bool AutoRead => autoRead == null || autoRead.Value;
+
         private Harmony harmony;
 
         private void Awake()
@@ -27,14 +29,17 @@ namespace FFCAccess
             Instance = this;
             Log = Logger;
             PluginDir = Path.GetDirectoryName(Info.Location);
-            preferSapi = Config.Bind("Speech", "PreferSAPI", false,
+            ConfigEntry<bool> preferSapi = Config.Bind("Speech", "PreferSAPI", false,
                 "Speak with Windows SAPI voices even when a screen reader (NVDA, JAWS) is running.");
+            autoRead = Config.Bind("Reading", "AutoRead", true,
+                "Read each new section aloud in full when it opens. If false, only the section number and choice count are spoken; use the arrow keys to read.");
 
             Speech.Init(PluginDir, preferSapi.Value);
 
             harmony = new Harmony("ffcaccess.screenreader");
             TryPatch("focus announcements", () => NavAnnouncer.PatchAll(harmony));
             TryPatch("section reader", () => SectionReader.Patch(harmony));
+            TryPatch("book reader", () => BookReader.Patch(harmony));
             TryPatch("popup reader", () => PopupReader.Patch(harmony));
 
             SceneManager.sceneLoaded += (scene, mode) => Log.LogInfo("Scene loaded: " + scene.name);
@@ -57,6 +62,7 @@ namespace FFCAccess
         {
             Diagnostics.TryLogBindings();
             NavAnnouncer.Tick();
+            BookReader.Tick();
             try
             {
                 HandleKeys();
@@ -69,83 +75,35 @@ namespace FFCAccess
 
         private void HandleKeys()
         {
+            bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
             bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-            if (Input.GetKeyDown(KeyCode.F1))
-            {
-                Speech.Say(HelpText);
-            }
-            else if (Input.GetKeyDown(KeyCode.F2))
-            {
-                SectionReader.RepeatSection();
-            }
-            else if (Input.GetKeyDown(KeyCode.F3))
-            {
-                SectionReader.ReadChoices();
-            }
-            else if (Input.GetKeyDown(KeyCode.F4))
-            {
-                ReadStats();
-            }
-            else if (Input.GetKeyDown(KeyCode.F5))
-            {
-                ReadScreen();
-            }
-            else if (Input.GetKeyDown(KeyCode.F6))
-            {
-                SectionReader.StepParagraph(-1);
-            }
-            else if (Input.GetKeyDown(KeyCode.F7))
-            {
-                SectionReader.StepParagraph(1);
-            }
-            else if (Input.GetKeyDown(KeyCode.F8))
-            {
-                Speech.Say(Speech.Last);
-            }
-            else if (Input.GetKeyDown(KeyCode.F12))
-            {
-                Diagnostics.DumpScene();
-            }
-        }
 
-        private const string HelpText =
-            "Accessibility keys. F1: this help. F2: read the current section again. F3: list the choices in this section. " +
-            "F4: your stats. F5: read everything on screen. F6 and F7: previous and next paragraph. F8: repeat last message. " +
-            "F12: save a screen dump for the mod developer. Use the game's arrow keys and Enter to move and select.";
-
-        private static void ReadStats()
-        {
-            Character c = BBGameController.instance?.character;
-            if (c == null || c.inventory == null || !SectionReader.InBook())
+            // Reading keys come first; they only do anything on the book page.
+            if (BookReader.HandleKeys(ctrl, shift))
             {
-                Speech.Say("No adventure is in progress.");
                 return;
             }
-            List<string> parts = new List<string>();
-            foreach (string id in new[] { "skill", "stamina", "luck" })
-            {
-                BBInventoryItem item = c.InventoryItem(id);
-                if (item != null)
-                {
-                    parts.Add((string.IsNullOrEmpty(item.name) ? id : item.name) + " " + item.totalQuantity);
-                }
-            }
-            // Log the whole inventory so the mod can learn this book's item types.
-            StringBuilder sb = new StringBuilder("Inventory dump:\n");
-            foreach (DictionaryEntry e in c.inventory)
-            {
-                if (e.Value is BBInventoryItem it)
-                {
-                    sb.Append("  ").Append(it.gameID).Append(" type=").Append(it.type).Append(" name=").Append(it.name)
-                      .Append(" qty=").Append(it.quantity).Append(" bonus=").Append(it.bonusQuantity)
-                      .Append(" base=").Append(it.baseValue).Append(" slots=").Append(it.slots).Append('\n');
-                }
-            }
-            Log.LogInfo(sb.ToString());
-            Speech.Say(parts.Count > 0 ? string.Join(", ", parts.ToArray()) : "No stats found.");
+
+            if (Input.GetKeyDown(KeyCode.F1)) Speech.Say(BookReader.Active ? ReadingHelp + " " + GlobalHelp : GlobalHelp);
+            else if (Input.GetKeyDown(KeyCode.F2)) SectionReader.RepeatSection();
+            else if (Input.GetKeyDown(KeyCode.F3)) SectionReader.ReadChoices();
+            else if (Input.GetKeyDown(KeyCode.F4)) CharacterInfo.ReadStats();
+            else if (Input.GetKeyDown(KeyCode.F5)) CharacterInfo.ReadInventory();
+            else if (Input.GetKeyDown(KeyCode.F6)) CharacterInfo.OpenAdventureSheet();
+            else if (Input.GetKeyDown(KeyCode.F7)) ReadScreen();
+            else if (Input.GetKeyDown(KeyCode.F8)) Speech.Say(Speech.Last);
+            else if (Input.GetKeyDown(KeyCode.F10)) Diagnostics.DumpScene();
         }
 
-        /// <summary>Fallback for screens the mod doesn't know yet: read every visible piece of text.</summary>
+        private const string ReadingHelp =
+            "On the book page: Up and Down arrows read the previous or next sentence. Control with Up or Down reads by paragraph. " +
+            "Tab and Shift Tab jump to the next or previous choice. Enter picks the choice you are on. Control Home and Control End go to the top or bottom.";
+
+        private const string GlobalHelp =
+            "Keys that work anywhere: F1 help. F2 read the whole section again. F3 list the choices. F4 your stats. F5 your inventory. " +
+            "F6 open the Adventure Sheet. F7 read everything on screen. F8 repeat the last message. F10 save a screen dump for the mod developer.";
+
+        /// <summary>F7, the fallback for screens the mod doesn't know yet: read every visible piece of text.</summary>
         private static void ReadScreen()
         {
             List<string> texts = new List<string>();
