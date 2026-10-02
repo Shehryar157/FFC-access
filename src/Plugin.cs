@@ -124,6 +124,11 @@ namespace FFCAccess
                     CombatReader.ReadStatus();
                     return;
                 }
+                if (Input.GetKeyDown(KeyCode.M) && SectionReader.InBook())
+                {
+                    MapReader.Open();
+                    return;
+                }
                 if (Input.GetKeyDown(KeyCode.S))
                 {
                     CharacterInfo.ReadStats();
