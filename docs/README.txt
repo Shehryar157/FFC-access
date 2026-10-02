@@ -8,10 +8,8 @@ It speaks through NVDA or JAWS, and uses Windows voices (SAPI) if no screen read
 Installing
 ----------
 
-1. Find the game folder. In Steam: right-click Fighting Fantasy Classics, choose Manage, then Browse local files.
-2. Unpack everything in this zip into that folder, so that winhttp.dll ends up next to
-   "Fighting Fantasy Classics.exe". Say yes if Windows asks to replace files.
-3. Start the game from Steam as usual. After a few seconds you should hear
+1. Unpack everything in this zip into the game folder. Say yes if Windows asks to replace files.
+2. Start the game from Steam as usual. After a few seconds you should hear
    "Fighting Fantasy Classics accessibility loaded. Press F1 for help."
 
 The zip includes BepInEx 5, the mod loader that runs this mod. If you already use BepInEx with this game,
@@ -93,6 +91,17 @@ Picture descriptions
 Descriptions are text files in BepInEx\plugins\FFCAccess\descriptions, one per book. Books without a file
 just announce "Illustration, no description yet." You can correct or add descriptions with any text editor;
 keep the quotes and commas in place.
+
+
+If the mod doesn't start
+------------------------
+
+- Check the files are in the right place: winhttp.dll must be in the same folder as
+  "Fighting Fantasy Classics.exe". If unpacking created an extra folder (such as FFCAccess-0.7.0), move its contents
+  up into the game folder.
+- Finding the game folder: in your Steam library, open the game's context menu, choose Manage, then Browse local files.
+- Still silent? Look for BepInEx\LogOutput.log in the game folder. If it's missing, BepInEx didn't run, which usually
+  means winhttp.dll is in the wrong place.
 
 
 Reporting problems

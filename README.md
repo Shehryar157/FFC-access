@@ -9,12 +9,21 @@ fight, manage your inventory, explore book maps by compass direction, and hear d
 ## Installing
 
 1. Download the latest zip from the [Releases](../../releases) page.
-2. Unpack it into the game folder (in Steam: right-click the game, Manage, Browse local files),
-   so that `winhttp.dll` sits next to `Fighting Fantasy Classics.exe`.
+2. Unpack it into the game folder.
 3. Start the game. You should hear "Fighting Fantasy Classics accessibility loaded. Press F1 for help."
 
 The zip contains BepInEx 5 (the mod loader), the mod, and `FFCAccess-Readme.txt` with every key and setting.
 It contains no game files. To uninstall, delete `winhttp.dll` from the game folder.
+
+### If the mod doesn't start
+
+- **Check the files are in the right place.** `winhttp.dll` must be in the same folder as
+  `Fighting Fantasy Classics.exe`. If unpacking created an extra folder (such as `FFCAccess-0.7.0`), move its contents
+  up into the game folder.
+- **Finding the game folder:** in your Steam library, open the game's context menu, choose Manage, then
+  Browse local files.
+- **Still silent?** Check `BepInEx\LogOutput.log` in the game folder. If it's missing, BepInEx didn't run, which
+  usually means `winhttp.dll` is in the wrong place.
 
 ## What it does
 
