@@ -25,36 +25,66 @@ namespace FFCAccess
             else if (InputLayers.Receiving("NewAdventuresMenu")) screen = Object.FindObjectOfType<NewAdventureDisplay>();
             if (screen != null)
             {
-                Plugin.Instance.StartCoroutine(Echo(screen));
+                GameObject unused;
+                Plugin.Instance.StartCoroutine(Echo(screen, FocusedRow(screen, out unused), ++newest));
             }
         }
 
-        private static IEnumerator Echo(object screen)
+        /// <summary>Counts the echoes started, so an older one stops when the player presses again.</summary>
+        private static int newest;
+
+        /// <summary>The focused row as we'd speak it ("Music volume, slider, 60 percent"), or null if there's none.</summary>
+        private static string FocusedRow(object screen, out GameObject target)
         {
-            // Sliders animate to their new value over 0.1 seconds; wait until that's done.
-            yield return new WaitForSecondsRealtime(0.2f);
-            if (TextWindow.Open || SettingsMenu.Open)
+            target = null;
+            try
             {
-                yield break;
+                Traverse t = Traverse.Create(screen);
+                int navIndex = t.Field("navIndex").GetValue<int>();
+                OptionsNav nav = t.Field("navButtons").GetValue<OptionsNav>();
+                if (navIndex < 0 || nav == null)
+                {
+                    return null;
+                }
+                List<OptionsNav.OptionsItem> items = nav.ActiveOptions();
+                return navIndex < items.Count ? NavAnnouncer.DescribeOptionItem(items[navIndex], out target) : null;
             }
-            Traverse t = Traverse.Create(screen);
-            int navIndex = t.Field("navIndex").GetValue<int>();
-            OptionsNav nav = t.Field("navButtons").GetValue<OptionsNav>();
-            if (navIndex < 0 || nav == null)
+            catch
             {
-                yield break;
+                return null;
             }
-            List<OptionsNav.OptionsItem> items = nav.ActiveOptions();
-            if (navIndex >= items.Count)
-            {
-                yield break;
-            }
+        }
+
+        /// <summary>
+        /// before is the row as it read when the key was pressed. Watch it every frame and speak as soon as it has
+        /// changed and then stayed the same for three frames (sliders glide to their new value over 0.1 seconds, so
+        /// the first changed reading isn't the final one). If it never changes, speak after 0.2 seconds as before.
+        /// </summary>
+        private static IEnumerator Echo(object screen, string before, int id)
+        {
+            float deadline = Time.unscaledTime + 0.2f;
+            string last = before;
+            int still = 0;
             GameObject target;
-            string text = NavAnnouncer.DescribeOptionItem(items[navIndex], out target);
-            if (!string.IsNullOrEmpty(text))
+            while (true)
             {
-                Speech.Say(text);
-                NavAnnouncer.Remember(screen, target, text);
+                yield return null;
+                if (id != newest || TextWindow.Open || SettingsMenu.Open)
+                {
+                    yield break;
+                }
+                string now = FocusedRow(screen, out target);
+                still = now == last ? still + 1 : 0;
+                last = now;
+                if ((now != before && still >= 2) || Time.unscaledTime >= deadline)
+                {
+                    break;
+                }
+            }
+            if (!string.IsNullOrEmpty(last))
+            {
+                Speech.Say(last);
+                NavAnnouncer.Remember(screen, target, last);
             }
         }
     }

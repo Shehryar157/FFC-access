@@ -109,19 +109,45 @@ namespace FFCAccess
                 return;
             }
             Last = text;
+            // Speak first, write the log line second: the screen reader shouldn't wait for the log.
+            if (loaded)
+            {
+                try
+                {
+                    Tolk_Output(text, interrupt);
+                }
+                catch (Exception e)
+                {
+                    Plugin.Log.LogError("Tolk_Output failed: " + e.Message);
+                }
+            }
             Plugin.Log.LogInfo("SAY" + (interrupt ? "!" : " ") + ": " + text);
-            if (!loaded)
+        }
+
+        /// <summary>The frame in which the last protected message (priority or event) was spoken.</summary>
+        private static int priorityFrame = -1;
+
+        /// <summary>The last frame in which the player pressed a key or button (the plugin reports it every frame).</summary>
+        private static int keyFrame = -1;
+
+        /// <summary>Called by the plugin every frame, so we know when the player last pressed something.</summary>
+        public static void NoteKeys()
+        {
+            if (Input.anyKeyDown)
             {
-                return;
+                keyFrame = Time.frameCount;
             }
-            try
-            {
-                Tolk_Output(text, interrupt);
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.LogError("Tolk_Output failed: " + e.Message);
-            }
+        }
+
+        /// <summary>
+        /// True if the player pressed a key after the protected message began. That press is the player moving on,
+        /// so what it causes should be spoken at once rather than wait behind the message.
+        /// The key press that opened the screen doesn't count: it came in the same frame as the message, or before it.
+        /// </summary>
+        private static bool PlayerMovedOn()
+        {
+            int pressed = Input.anyKeyDown ? Time.frameCount : keyFrame;
+            return pressed > priorityFrame;
         }
 
         /// <summary>
@@ -132,6 +158,7 @@ namespace FFCAccess
         {
             Say(text, interrupt);
             priorityUntil = Time.unscaledTime + protectSeconds;
+            priorityFrame = Time.frameCount;
         }
 
         /// <summary>
@@ -143,12 +170,17 @@ namespace FFCAccess
             bool interrupt = Time.unscaledTime > priorityUntil;
             Say(text, interrupt);
             priorityUntil = Mathf.Max(priorityUntil, Time.unscaledTime + protectSeconds);
+            priorityFrame = Time.frameCount;
         }
 
-        /// <summary>Speak a focus change: interrupts, unless a priority message was just spoken.</summary>
+        /// <summary>
+        /// Speak a focus change. It interrupts, except in the moment after a priority message when the focus moved
+        /// by itself (a screen opening and highlighting its first item): then it queues behind the message.
+        /// Once the player presses a key, their focus changes always interrupt.
+        /// </summary>
         public static void SayFocus(string text)
         {
-            Say(text, Time.unscaledTime > priorityUntil);
+            Say(text, Time.unscaledTime > priorityUntil || PlayerMovedOn());
         }
 
         public static void Silence()

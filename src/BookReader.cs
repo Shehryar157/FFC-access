@@ -281,6 +281,21 @@ namespace FFCAccess
             }
             // In this game "turn left" flips forward (the page moves to the left) and "turn right" flips back.
             if (dir > 0) turner.TurnLeft(); else turner.TurnRight();
+            SkipTurnAnimation(turner);
+        }
+
+        /// <summary>
+        /// The game reads a new page only once its page-turn animation ends, and reads the animation's speed from
+        /// this field on every frame. Raising it for the turn in progress ends the animation on the next frame, so
+        /// the page is spoken at once. The game sets the field again from its own Turn Speed setting on every turn,
+        /// so that setting, and turns made with the mouse or the game's own keys, are untouched.
+        /// </summary>
+        private static void SkipTurnAnimation(PageTurner turner)
+        {
+            if (IsTurning(turner))
+            {
+                turner.turnSpeed = 1000f;
+            }
         }
 
         /// <summary>D from the help list: describe the picture at the reading position (or the section's first).</summary>
@@ -364,6 +379,7 @@ namespace FFCAccess
                     {
                         break; // The game refused to turn.
                     }
+                    SkipTurnAnimation(turner);
                 }
                 yield return null;
             }
@@ -388,7 +404,10 @@ namespace FFCAccess
 
         private static bool IsTurning(PageTurner turner)
         {
-            return Traverse.Create(turner).Field("isTurning").GetValue<bool>();
+            return (bool)IsTurningField.GetValue(turner);
         }
+
+        // Looked up once: finding a private field by name is slow to repeat every frame.
+        private static readonly System.Reflection.FieldInfo IsTurningField = AccessTools.Field(typeof(PageTurner), "isTurning");
     }
 }

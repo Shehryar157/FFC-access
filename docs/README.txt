@@ -8,18 +8,21 @@ It speaks through NVDA or JAWS, and uses Windows voices (SAPI) if no screen read
 Installing
 ----------
 
-1. Run FFCAccess Installer. It finds the game through Steam and asks before changing anything.
+1. Run FFCAccess Installer. It finds the game through Steam and installs the mod. A progress window shows how
+   far it is (its title carries the percentage), and Cancel stops it without changing anything.
 2. Start the game from Steam as usual. After a few seconds you should hear
    "Fighting Fantasy Classics accessibility loaded. Press F1 for help."
 
 To update, run "FFCAccess Installer" again (a copy is kept in the game folder). It checks for a newer version
-online, installs it, and removes files the older version installed that are no longer needed. Your own files
-are kept: your settings, screen dumps, and a .bak backup of any picture description you edited.
+online. If there is one, it tells you what's new and offers Update or Skip, then downloads and installs it and
+finishes with "Done. Updated FFC Access from ... to ...". It removes files the older version installed that
+are no longer needed. Your own files are kept: your settings, screen dumps, and a .bak backup of any picture
+description you edited.
 
 The installer includes BepInEx 5, the mod loader that runs this mod.
 
-To uninstall, delete winhttp.dll from the game folder (that switches all mods off), or delete the
-BepInEx\plugins\FFCAccess folder to remove only this mod.
+To uninstall, run "Uninstall FFC Access" in the game folder. It removes the mod and its settings. BepInEx is
+removed too, unless another mod in the game uses it.
 
 
 Moving around
@@ -98,7 +101,8 @@ keep the quotes and commas in place.
 If the mod doesn't start
 ------------------------
 
-- If the installer can't find the game, paste the game folder when it asks.
+- If the installer can't find the game, it asks you to choose the game folder: the one that contains
+  "Fighting Fantasy Classics.exe".
 - Finding the game folder: in your Steam library, open the game's context menu, choose Manage, then Browse local files.
 - Still silent? Look for BepInEx\LogOutput.log in the game folder. If it's missing, BepInEx didn't run, which usually
   means winhttp.dll is missing from the game folder. Running the installer again puts it back.

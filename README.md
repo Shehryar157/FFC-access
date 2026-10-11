@@ -9,20 +9,24 @@ fight, manage your inventory, explore book maps by compass direction, and hear d
 ## Installing and updating
 
 1. Download **FFCAccess.Installer.exe** from the [latest release](../../releases/latest).
-2. Run it. It finds the game through Steam, asks before changing anything, and installs the mod.
+2. Run it. It finds the game through Steam and installs the mod. A progress window shows how far it is (its title
+   carries the percentage), and Cancel stops it without changing anything.
 3. Start the game. You should hear "Fighting Fantasy Classics accessibility loaded. Press F1 for help."
 
-To update, run the installer again: it checks for a newer version online and installs it. A copy of the installer
-is kept in the game folder, so you can run it from there. It keeps your own files: your BepInEx settings, your
+To update, run the installer again: it checks for a newer version online. If there is one, it tells you what's new
+and offers Update or Skip, then downloads and installs it and finishes with "Done. Updated FFC Access from ... to
+...". A copy of the installer is kept in the game folder, so you can run it from there. It keeps your own files: your BepInEx settings, your
 F10 dumps, and a backup of any picture descriptions you've edited. It also removes files that older versions
 installed and the new one no longer needs.
 
 The installer includes BepInEx 5 (the mod loader), the mod, and `FFCAccess-Readme.txt` with every key and setting.
-It contains no game files. To uninstall, delete `winhttp.dll` from the game folder.
+It contains no game files. To uninstall, run `Uninstall FFC Access.exe` in the game folder: it removes the mod and
+its settings, and BepInEx too unless another mod in the game uses it.
 
 ### If the mod doesn't start
 
-- **If the installer can't find the game,** paste the game folder when it asks. To find it in your Steam library,
+- **If the installer can't find the game,** it asks you to choose the game folder: the one that contains
+  `Fighting Fantasy Classics.exe`. To find it in your Steam library,
   open the game's context menu, choose Manage, then Browse local files.
 - **Check the log:** if `BepInEx\LogOutput.log` doesn't exist in the game folder after starting the game, BepInEx
   didn't run. Run the installer again, or check that `winhttp.dll` is next to `Fighting Fantasy Classics.exe`.
@@ -88,7 +92,7 @@ and reporting back. Neither the game's source code nor any official modding supp
 - `descriptions/`: picture descriptions as JSON, one file per book. Corrections are welcome.
 - `docs/README.txt`: the player-facing readme that ships inside the installer.
 - `native/`: Tolk and the screen reader drivers.
-- `installer/`: the installer and updater (a C# console program; the mod's files are packed inside it at build time).
+- `installer/`: the installer and updater (a small C# Windows program made of standard dialogs; the mod's files are packed inside it at build time).
 - `tools/`: image extraction and release packaging (Python).
 
 ## Building

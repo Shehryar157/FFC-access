@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 
 namespace FFCAccess
 {
-    [BepInPlugin("ffcaccess.screenreader", "FFC Access", "0.9.0")]
+    [BepInPlugin("ffcaccess.screenreader", "FFC Access", "0.10.0")]
     public class Plugin : BaseUnityPlugin
     {
         internal static Plugin Instance;
@@ -56,6 +56,7 @@ namespace FFCAccess
 
         private void Update()
         {
+            Speech.NoteKeys();
             Diagnostics.TryLogBindings();
             NavAnnouncer.Tick();
             BookReader.Tick();

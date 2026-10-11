@@ -15,6 +15,7 @@ namespace FFCAccess
     {
         private static object lastScreen;
         private static string lastKey;
+        private static readonly Dictionary<Type, FieldInfo> selectionFields = new Dictionary<Type, FieldInfo>();
 
         public static void PatchAll(Harmony harmony)
         {
@@ -83,7 +84,15 @@ namespace FFCAccess
             }
             try
             {
-                return Traverse.Create(screen).Field("selection").GetValue<RectTransform>();
+                // This runs every frame, so each screen class's "selection" field is looked up once and remembered.
+                Type type = screen.GetType();
+                FieldInfo field;
+                if (!selectionFields.TryGetValue(type, out field))
+                {
+                    field = AccessTools.Field(type, "selection");
+                    selectionFields[type] = field;
+                }
+                return field != null ? field.GetValue(screen) as RectTransform : null;
             }
             catch
             {

@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- A plain console program: the friendliest kind of Windows app for screen readers.
-       .NET Framework 4.7.2 is built into Windows 10 and 11, so players don't need to install anything. -->
+  <!-- A small Windows program made of standard dialogs (message boxes, a progress window), which screen readers
+       read in full. .NET Framework 4.7.2 is built into Windows 10 and 11, so players don't need to install anything. -->
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>FFCAccess Installer</AssemblyName>
     <RootNamespace>FFCAccessInstaller</RootNamespace>
@@ -23,7 +23,8 @@
   <ItemGroup>
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
-    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Web.Extensions" />
   </ItemGroup>
 
